@@ -1,0 +1,103 @@
+# Project information
+site_name: Hello Numerics
+site_url: https://www.hello-numerics.com/
+site_description: "Numerics for the people"
+docs_dir: docs
+#site_dir: site/en
+# Repository
+#edit_uri: tree/main/docs-en
+#version: 1.0.0
+
+site_author: Lukasz Laniewski-Wollk
+
+repo_name: llaniewski/hello-numerics
+repo_url: https://github.com/llaniewski/hello-numerics
+edit_uri: "https://github.com/llaniewski/hello-numerics/edit/master/docs/"
+
+markdown_extensions:
+  - fenced_code
+  - codehilite
+#    - mdx_math
+  - admonition
+  - footnotes
+  - abbr
+  - attr_list
+  - def_list
+  - md_in_html
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  # - pymdownx.emoji:
+  #     emoji_index: !!python/name:materialx.emoji.twemoji
+  #     emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.keys
+  # - pymdownx.magiclink:
+  #     repo_url_shorthand: true
+  #     user: squidfunk
+  #     repo: mkdocs-material
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+
+
+
+extra_javascript: 
+    - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+
+# Configuration
+theme:
+  name: 'material'
+  language: en
+  font:
+    text: Roboto
+    code: Roboto Mono
+  palette:
+    - scheme: default
+      primary: white
+      accent: teal
+      toggle:
+        icon: material/theme-light-dark
+        name: Dark mode
+    - scheme: slate
+      primary: black
+      accent: teal
+      toggle:
+        icon: material/theme-light-dark
+        name: Light mode
+
+extra:
+  status:
+    new: Recently Added
+
+# Page tree
+nav:
+  - Basics:
+    - basics/index.md
+  - Finite Difference Method:
+    - fdm/index.md
+  - Finite Element Method:
+    # [icon: material/book-open-outline]
+    - fem/index.md
+    # - 0.1 About This Book: chapter_preface/about_the_book.md
+    # - 0.2 How to Read: chapter_preface/suggestions.md
+    # - 0.3 Summary: chapter_preface/summary.md
+  - Finite Volume Method:
+    - fvm/index.md
+  - Lattice Boltzmann Method:
+    - lbm/index.md
+
