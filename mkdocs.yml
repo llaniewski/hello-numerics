@@ -53,11 +53,9 @@ markdown_extensions:
       custom_checkbox: true
   - pymdownx.tilde
 
-
-
-
 extra_javascript: 
     - https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML
+    - https://cdn.jsdelivr.net/npm/d3@7
 
 # Configuration
 theme:
@@ -91,7 +89,6 @@ nav:
   - Finite Difference Method:
     - fdm/index.md
   - Finite Element Method:
-    # [icon: material/book-open-outline]
     - fem/index.md
     # - 0.1 About This Book: chapter_preface/about_the_book.md
     # - 0.2 How to Read: chapter_preface/suggestions.md
