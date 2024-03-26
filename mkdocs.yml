@@ -17,7 +17,7 @@ edit_uri: "https://github.com/llaniewski/hello-numerics/edit/master/docs/"
 markdown_extensions:
   - fenced_code
   - codehilite
-#    - mdx_math
+  #- mdx_math
   - admonition
   - footnotes
   - abbr
@@ -77,6 +77,30 @@ theme:
       toggle:
         icon: material/theme-light-dark
         name: Light mode
+  features:
+    - announce.dismiss
+    - content.action.edit
+    # - content.action.view
+    - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - content.tooltips
+    # - header.autohide
+    # - navigation.expand
+    - navigation.indexes
+    # - navigation.instant
+    # - navigation.prune
+    - navigation.sections
+    # - navigation.tabs
+    # - navigation.tabs.sticky
+    - navigation.top
+    - navigation.footer
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+    # - toc.integrate
 
 extra:
   status:
