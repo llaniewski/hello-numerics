@@ -110,6 +110,7 @@ extra:
 nav:
   - Basics:
     - basics/index.md
+    - Test: basics/test.md
   - Finite Difference Method:
     - fdm/index.md
   - Finite Element Method:
