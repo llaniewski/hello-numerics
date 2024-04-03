@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Stick Figure Graph</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <svg width="800" height="600"></svg>
+
+    <script>
+        // Sample data
+        const nodes = [
+            { id: 1, name: "Node 1", head: 20, x: 100, y: 50 },
+            { id: 2, name: "Node 2", head: 15, x: 200, y: 100 },
+            { id: 3, name: "Node 3", head: 25, x: 300, y: 50 },
+            { id: 4, name: "Node 4", head: 18, x: 400, y: 100 }
+        ];
+
+        const links = [
+            { source: 1, target: 2 },
+            { source: 1, target: 3 },
+            { source: 2, target: 4 },
+            { source: 3, target: 4 }
+        ];
+
+        // Create SVG container
+        const svg = d3.select("svg");
+
+        // Create links
+        svg.append("g").selectAll(".one")
+            .data(links)
+            .enter().append("line").attr("class","one")
+            .attr("stroke", "black")
+            .attr("x1", d => nodes.find(node => node.id === d.source).x)
+            .attr("y1", d => nodes.find(node => node.id === d.source).y)
+            .attr("x2", d => nodes.find(node => node.id === d.target).x)
+            .attr("y2", d => nodes.find(node => node.id === d.target).y);
+
+        // Create nodes
+        const nodeGroup = svg.selectAll(".two")
+            .data(nodes)
+            .enter().append("g").attr("class","two")
+            .attr("transform", d => `translate(${d.x}, ${d.y})`);
+
+
+        nodeGroup.append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 0)
+            .attr("y2", 50)
+            .attr("stroke", "black");
+        nodeGroup.append("circle")
+            .attr("cx", 0)
+            .attr("cy", 0)
+            .attr("r", d => d.head / 2)
+            .attr("fill", "lightblue");
+
+        nodeGroup.append("line")
+            .attr("x1", 0)
+            .attr("y1", 50)
+            .attr("x2", -10)
+            .attr("y2", 100)
+            .attr("stroke", "black");
+
+        nodeGroup.append("line")
+            .attr("x1", 0)
+            .attr("y1", 50)
+            .attr("x2", 10)
+            .attr("y2", 100)
+            .attr("stroke", "black");
+
+        nodeGroup.append("text")
+            .attr("x", 0)
+            .attr("y", 120)
+            .attr("text-anchor", "middle")
+            .text(d => d.name);
+    </script>
+</body>
+</html>

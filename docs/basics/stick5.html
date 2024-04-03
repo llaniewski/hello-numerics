@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Smooth Node Transitions</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <svg width="800" height="600"></svg>
+
+    <script>
+        // Sample data
+        let nodes = [
+            { id: 1, name: "Node 1", head: 20, x: 100, y: 50 },
+            { id: 2, name: "Node 2", head: 15, x: 200, y: 100 },
+            { id: 3, name: "Node 3", head: 25, x: 300, y: 50 },
+            { id: 4, name: "Node 4", head: 18, x: 400, y: 100 }
+        ];
+
+        const links = [
+            { source: 1, target: 2 },
+            { source: 1, target: 3 },
+            { source: 2, target: 4 },
+            { source: 3, target: 4 }
+        ];
+
+        // Create SVG container
+        const svg = d3.select("svg");
+
+        // Define drag behavior
+        const drag = d3.drag()
+            .on("start", dragStarted)
+            .on("drag", dragged)
+            .on("end", dragEnded);
+
+        function update(tran) {
+            console.log("update");
+            const linkGroup = svg.selectAll(".edge").data(links)
+            .join(
+                enter => enter.append("line").attr("class","edge").attr("stroke", "black"),
+                update => update,
+                exit => exit.remove()
+            );
+            
+            const nodeGroup = svg.selectAll(".node").data(nodes, function(d){return d.id})
+            .join(
+                enter => {
+                    let g = enter.append("g")
+                        .attr("class","node")
+                        .attr("transform", d => `translate(${d.x}, ${d.y})`)
+                        .call(drag)
+                        .on("click", updatePositions);
+                    g.append("circle").attr("class","head")
+                        .attr("cx", 0)
+                        .attr("cy", 0)
+                        .attr("fill", "lightblue");
+                    g.append("line")
+                        .attr("x1", 0)
+                        .attr("y1", 0)
+                        .attr("x2", 0)
+                        .attr("y2", 50)
+                        .attr("stroke", "black");
+                    g.append("line")
+                        .attr("x1", 0)
+                        .attr("y1", 50)
+                        .attr("x2", -10)
+                        .attr("y2", 100)
+                        .attr("stroke", "black");
+                    g.append("line")
+                        .attr("x1", 0)
+                        .attr("y1", 50)
+                        .attr("x2", 10)
+                        .attr("y2", 100)
+                        .attr("stroke", "black");
+                    g.append("text")
+                        .attr("x", 0)
+                        .attr("y", 120)
+                        .attr("text-anchor", "middle")
+                        .text(d => d.name);
+                    return g;
+                },
+                update => update,
+                exit => exit.remove()
+            );
+            tran(linkGroup)
+                .attr("x1", d => nodes.find(node => node.id === d.source).x)
+                .attr("y1", d => nodes.find(node => node.id === d.source).y)
+                .attr("x2", d => nodes.find(node => node.id === d.target).x)
+                .attr("y2", d => nodes.find(node => node.id === d.target).y);
+            tran(nodeGroup)
+                .attr("transform", d => `translate(${d.x}, ${d.y})`);
+            tran(svg.selectAll(".head"))
+                .attr("r", d => d.head / 2);
+        }
+
+        update(obj => obj);
+
+        function dragStarted(event, d) {
+            d3.select(this).raise().classed("active", true);
+        }
+
+        function dragged(event, d) {
+            d.x = event.x;
+            d.y = event.y;
+            update(obj => obj);
+        }
+
+        function dragEnded(event, d) {
+            d3.select(this).classed("active", false);
+        }
+
+
+        function updatePositions(event, d) {
+            n = nodes.length;
+            nodes.push({ id: n+1, name: "New"});
+            nodes.forEach(node => {
+                node.x = Math.random() * 600 + 100;
+                node.y = Math.random() * 400 + 100;
+                node.head = Math.random() * 30 + 10;
+            });
+            //console.log(nodes);
+            
+            update(obj => obj.transition().duration(1000));
+        }
+    </script>
+</body>
+</html>

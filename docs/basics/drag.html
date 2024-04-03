@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Draggable Stick Figure with SVG.js</title>
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.js@3.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@svgdotjs/svg.draggable.js"></script>
+</head>
+<body>
+    <div id="stick-figure-container"></div>
+
+    <script>
+        console.log("real start...");
+        import('https://webr.r-wasm.org/latest/webr.mjs').then(
+            async ({ WebR }) => {
+                const webR = new WebR();
+                console.log("start...");
+                await webR.init();
+                console.log("finish");
+            }
+        );
+        // Create an SVG.js canvas
+        let draw = SVG().addTo('#stick-figure-container').size(400, 400);
+
+        // Draw the stick figure
+        let head = draw.circle(40).fill('#FF0000').move(180, 20);
+        let body = draw.line(200, 60, 200, 200).stroke({ width: 5, color: '#000000' });
+        let leftArm = draw.line(160, 100, 200, 120).stroke({ width: 5, color: '#000000' });
+        let rightArm = draw.line(240, 100, 200, 120).stroke({ width: 5, color: '#000000' });
+        let leftLeg = draw.line(200, 200, 160, 280).stroke({ width: 5, color: '#000000' });
+        let rightLeg = draw.line(200, 200, 240, 280).stroke({ width: 5, color: '#000000' });
+
+        // Make the stick figure draggable
+        let stickFigureGroup = draw.group().draggable();
+        stickFigureGroup.add(head, body, leftArm, rightArm, leftLeg, rightLeg);
+    </script>
+</body>
+</html>
