@@ -36,13 +36,21 @@
 
         function update(tran) {
             console.log("update");
+            linkFun = link => link
+                .attr("x1", d => nodes.find(node => node.id === d.source).x)
+                .attr("y1", d => nodes.find(node => node.id === d.source).y)
+                .attr("x2", d => nodes.find(node => node.id === d.target).x)
+                .attr("y2", d => nodes.find(node => node.id === d.target).y);
+            nodeFun = node => node
+                .attr("transform", d => `translate(${d.x}, ${d.y})`);
+            headFun = head => head
+                .attr("r", d => d.head / 2);
             const linkGroup = svg.selectAll(".edge").data(links)
             .join(
-                enter => enter.append("line").attr("class","edge").attr("stroke", "black"),
-                update => update,
+                enter => linkFun(enter.append("line").attr("class","edge").attr("stroke", "black")),
+                update => linkFun(tran(update)),
                 exit => exit.remove()
             );
-            
             const nodeGroup = svg.selectAll(".node").data(nodes, function(d){return d.id})
             .join(
                 enter => {
@@ -51,6 +59,7 @@
                         .attr("transform", d => `translate(${d.x}, ${d.y})`)
                         .call(drag)
                         .on("click", updatePositions);
+                    g = nodeFun(g);
                     g.append("circle").attr("class","head")
                         .attr("cx", 0)
                         .attr("cy", 0)
@@ -80,16 +89,9 @@
                         .text(d => d.name);
                     return g;
                 },
-                update => update,
+                update => nodeFun(tran(update)),
                 exit => exit.remove()
             );
-            tran(linkGroup)
-                .attr("x1", d => nodes.find(node => node.id === d.source).x)
-                .attr("y1", d => nodes.find(node => node.id === d.source).y)
-                .attr("x2", d => nodes.find(node => node.id === d.target).x)
-                .attr("y2", d => nodes.find(node => node.id === d.target).y);
-            tran(nodeGroup)
-                .attr("transform", d => `translate(${d.x}, ${d.y})`);
             tran(svg.selectAll(".head"))
                 .attr("r", d => d.head / 2);
         }
@@ -114,6 +116,7 @@
         function updatePositions(event, d) {
             n = nodes.length;
             nodes.push({ id: n+1, name: "New"});
+            links.push({ source: n, target: n+1 });
             nodes.forEach(node => {
                 node.x = Math.random() * 600 + 100;
                 node.y = Math.random() * 400 + 100;
