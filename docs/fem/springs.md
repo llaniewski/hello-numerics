@@ -54,6 +54,10 @@
         stroke: #ac2b3c;
         stroke-width: 5px;
     }
+    .pen2 {
+        stroke: #427177;
+        stroke-width: 5px;
+    }
     .pen1fill {
         stroke: #ac2b3c;
         fill: white;
@@ -68,21 +72,19 @@
 <script type="module">
     // Sample data
     let nodes = [
-        { id: 1, name: "Node 1", head: 20, x: 100, y: 50 },
-        { id: 2, name: "Node 2", head: 15, x: 200, y: 100 },
-        { id: 3, name: "Node 3", head: 25, x: 300, y: 50 },
-        { id: 4, name: "Node 4", head: 18, x: 400, y: 100 }
+        { id: 1, name: "Alice", head: 20, x: 100, y: 0 },
+        { id: 2, name: "Ben", head: 20, x: 200, y: 0 },
+        { id: 3, name: "Carrie", head: 20, x: 300, y: 0 }
     ];
 
     const links = [
         { source: 1, target: 2 },
-        { source: 1, target: 3 },
-        { source: 2, target: 4 },
-        { source: 3, target: 4 }
+        { source: 2, target: 3 }
     ];
 
     // Create SVG container
-    const svg = d3.select("#pic1");
+    const svg = d3.select("#pic1").append("g").attr("transform", "translate(40, 40)")
+        .classed("penfilter",true);
 
     // Define drag behavior
     const drag = d3.drag()
@@ -92,24 +94,29 @@
 
     d3.selection.prototype.appendGuy = function() {
         let g = this.append("g");
-        g.classed("penfilter",true);
         g.append("line")
             .attr("x1", 0)
             .attr("y1", 0)
             .attr("x2", 0)
-            .attr("y2", 50)
+            .attr("y2", 25)
             .classed("pen1",true);
         g.append("line")
             .attr("x1", 0)
-            .attr("y1", 50)
+            .attr("y1", 25)
             .attr("x2", -10)
-            .attr("y2", 100)
+            .attr("y2", 55)
             .classed("pen1",true);
         g.append("line")
             .attr("x1", 0)
-            .attr("y1", 50)
+            .attr("y1", 25)
             .attr("x2", 10)
-            .attr("y2", 100)
+            .attr("y2", 55)
+            .classed("pen1",true);
+        g.append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 0)
+            .attr("y2", -10)
             .classed("pen1",true);
         g.append("text")
             .attr("x", 0)
@@ -117,7 +124,8 @@
             .attr("text-anchor", "middle");
         g.append("circle")
             .attr("cx", 0)
-            .attr("cy", 0)
+            .attr("cy", -20)
+            .attr("r", 10)
             .classed("pen1fill",true);
         return g;
     };
@@ -130,12 +138,12 @@
             .attr("y2", d => nodes.find(node => node.id === d.target).y);
         let nodeFun = node => {
             node.attr("transform", d => `translate(${d.x}, ${d.y})`);
-            node.select("circle").attr("r", d => d.head / 2);
+            node.select("circle");
             return node;
         };
         const linkGroup = svg.selectAll(".edge").data(links)
         .join(
-            enter => linkFun(enter.append("line").classed("edge",true).classed("pen1",true)),
+            enter => linkFun(enter.append("line").classed("edge",true).classed("pen2",true)),
             update => linkFun(tran(update)),
             exit => exit.remove()
         );
