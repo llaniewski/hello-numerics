@@ -1,7 +1,7 @@
 # Springs
 
 <svg xmlns="http://www.w3.org/2000/svg">
-<filter x="-2%" y="-2%" width="104%" height="104%" filterUnits="objectBoundingBox" id="PencilTexture">
+    <filter x="-2%" y="-2%" width="104%" height="104%" filterUnits="objectBoundingBox" id="PencilTexture">
       <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="3" result="noise">
       </feTurbulence>
       <feDisplacementMap xChannelSelector="R" yChannelSelector="G" scale="3" in="SourceGraphic" result="newSource">
@@ -47,15 +47,20 @@
     </filter>
 </svg>
 
-<svg width="800" height="600" id="pic1"></svg>
+<svg width="750" height="500" id="pic1"></svg>
 
 <style>
     .pen1 {
+        color: #ac2b3c;
         stroke: #ac2b3c;
         stroke-width: 5px;
     }
     .pen2 {
-        stroke: #427177;
+        stroke: #518c94;
+        stroke-width: 5px;
+    }
+    .pen3 {
+        stroke: #d2d65c;
         stroke-width: 5px;
     }
     .pen1fill {
@@ -67,24 +72,53 @@
     .penfilter {
         filter: url('#pencilTexture4');
     }
+    @keyframes pulse {
+        0% { transform: scale(0.7); opacity: 0.5; }
+        50% { transform: scale(1); opacity: 0.25; }
+        100% { transform: scale(0.7); opacity: 0.5; }
+    }
+    .pickers > * > circle {
+        animation: pulse 2s infinite;
+        fill: steelblue;
+    }
+    .pickers:has(>*:hover) > *:not(:hover) > circle {
+        animation: unset;
+        transform: scale(0.7);
+        opacity: 0.1;
+    }
+    .pickers > *:hover > circle {
+        animation: unset;
+        transform: scale(1);
+        opacity: 0.7;
+    }
 </style>
-
 <script type="module">
     // Sample data
     let nodes = [
-        { id: 1, name: "Alice", head: 20, x: 100, y: 0 },
-        { id: 2, name: "Ben", head: 20, x: 200, y: 0 },
-        { id: 3, name: "Carrie", head: 20, x: 300, y: 0 }
+        { id: 1, name: "Anne", head: 20, x: 0, y: 0 },
+        { id: 2, name: "Bart", head: 20, x: 200, y: 0 },
+        { id: 3, name: "Carl", head: 20, x: 400, y: 0 }
+    ];
+    let pickers = [
+        { x: 0, y: 0, xslide: true, fun: d => { nodes[0].x = d.x; } },
+        { x: 200, y: 0, xslide: true, fun: d => { nodes[1].x = d.x; } },
+        { x: 400, y: 0, xslide: true, fun: d => { nodes[2].x = d.x; } }
     ];
 
     const links = [
-        { source: 1, target: 2 },
-        { source: 2, target: 3 }
+        { source: 1, target: 2, length:150, k: 1.5 },
+        { source: 2, target: 3, length:150, k: 1.5 }
     ];
 
+    
+    console.log(nodes);
+
     // Create SVG container
-    const svg = d3.select("#pic1").append("g").attr("transform", "translate(40, 40)")
+    const svg_main_g = d3.select("#pic1").append("g").attr("transform", "translate(20, 40)");
+    const drawing = svg_main_g.append("g")
         .classed("penfilter",true);
+    const pickers_g = svg_main_g.append("g")
+        .classed("pickers",true);
 
     // Define drag behavior
     const drag = d3.drag()
@@ -99,6 +133,25 @@
             .attr("y1", 0)
             .attr("x2", 0)
             .attr("y2", 25)
+            .classed("pen1",true);
+        g.append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 20)
+            .attr("y2", 10)
+            .classed("pen1",true);
+        g.append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", 10)
+            .attr("y2", 0)
+            .classed("force",true)
+            .classed("pen3",true);
+        g.append("line")
+            .attr("x1", 0)
+            .attr("y1", 0)
+            .attr("x2", -20)
+            .attr("y2", 10)
             .classed("pen1",true);
         g.append("line")
             .attr("x1", 0)
@@ -119,9 +172,9 @@
             .attr("y2", -10)
             .classed("pen1",true);
         g.append("text")
-            .attr("x", 0)
-            .attr("y", 120)
-            .attr("text-anchor", "middle");
+            .attr("x", 15)
+            .attr("y", 55)
+            .attr("text-anchor", "left");
         g.append("circle")
             .attr("cx", 0)
             .attr("cy", -20)
@@ -131,29 +184,75 @@
     };
     function update(tran) {
         console.log("update");
+        pickers.forEach(pick => {
+            pick.fun(pick);
+            return pick;
+        });
+        nodes.forEach(node => {
+            node.xforce = 0;
+            node.yforce = 0;
+            return node;
+        });
+        links.forEach(link => {
+            let source = nodes.find(node => node.id === link.source);
+            let target = nodes.find(node => node.id === link.target);
+            let dx = source.x - target.x;
+            if (dx > 0) {
+                link.xsource = source.x - 20;
+                link.ysource = source.y + 10;
+                link.xtarget = target.x + 20;
+                link.ytarget = target.y + 10;
+            } else {
+                link.xsource = source.x + 20;
+                link.ysource = source.y + 10;
+                link.xtarget = target.x - 20;
+                link.ytarget = target.y + 10;
+            }
+            let dy = source.y - target.y;
+            let d = Math.sqrt(dx*dx+dy*dy);
+            let force = (d-link.length)*link.k;
+            //link.force = (d-link.length)*link.k;
+            source.xforce -= force*dx/d;
+            source.yforce -= force*dy/d;
+            target.xforce += force*dx/d;
+            target.yforce += force*dy/d;
+            return link;
+        });
         let linkFun = link => link
-            .attr("x1", d => nodes.find(node => node.id === d.source).x)
-            .attr("y1", d => nodes.find(node => node.id === d.source).y)
-            .attr("x2", d => nodes.find(node => node.id === d.target).x)
-            .attr("y2", d => nodes.find(node => node.id === d.target).y);
+            .attr("x1", d => d.xsource)
+            .attr("y1", d => d.ysource)
+            .attr("x2", d => d.xtarget)
+            .attr("y2", d => d.ytarget);
         let nodeFun = node => {
             node.attr("transform", d => `translate(${d.x}, ${d.y})`);
-            node.select("circle");
+            node.select("text").text(d => d.name);
+            node.select(".force")
+                .attr("x2",d=>d.xforce)
+                .attr("y2",d=>d.yforce);
             return node;
         };
-        const linkGroup = svg.selectAll(".edge").data(links)
+        pickers_g.selectAll("g").data(pickers)
+        .join(
+            enter => {
+                let g = enter.append("g").call(drag);
+                g.append("circle").attr("r",20);
+                return g;
+            },
+            update => update,
+            exit => exit.remove()
+        ).attr("transform", d => `translate(${d.x}, ${d.y})`);
+        const linkGroup = drawing.selectAll(".edge").data(links)
         .join(
             enter => linkFun(enter.append("line").classed("edge",true).classed("pen2",true)),
             update => linkFun(tran(update)),
             exit => exit.remove()
         );
-        const nodeGroup = svg.selectAll(".node").data(nodes, function(d){return d.id})
+        const nodeGroup = drawing.selectAll(".node").data(nodes, function(d){return d.id})
         .join(
             enter => {
                 let g = enter.appendGuy()
                     .classed("node",true)
                     .attr("transform", d => `translate(${d.x}, ${d.y})`)
-                    .call(drag)
                     .on("click", updatePositions)
                 return nodeFun(g);
             },
@@ -169,8 +268,8 @@
     }
 
     function dragged(event, d) {
-        d.x = event.x;
-        d.y = event.y;
+        if (d.xslide) d.x = event.x;
+        if (d.yslide) d.y = event.y;
         update(obj => obj);
     }
 
