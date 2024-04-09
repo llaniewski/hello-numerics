@@ -112,18 +112,18 @@
             d3.select(this).classed("active", false);
         }
 
-
+        randNode = node => {
+            node.x = Math.random() * 600 + 100;
+            node.y = Math.random() * 400 + 100;
+            node.head = Math.random() * 30 + 10;
+            return node;
+        };
         function updatePositions(event, d) {
             n = nodes.length;
-            nodes.push({ id: n+1, name: "New"});
+            nodes.push(randNode({ id: n+1, name: "New"}));
             links.push({ source: n, target: n+1 });
-            nodes.forEach(node => {
-                node.x = Math.random() * 600 + 100;
-                node.y = Math.random() * 400 + 100;
-                node.head = Math.random() * 30 + 10;
-            });
-            //console.log(nodes);
-            
+            update(obj => obj.transition().duration(1000));
+            nodes.forEach(randNode);
             update(obj => obj.transition().duration(1000));
         }
     </script>
