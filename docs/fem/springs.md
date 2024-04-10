@@ -103,6 +103,9 @@
         transform: scale(1);
         opacity: 0.7;
     }
+    .pickers:has(>*.active) > * {
+        opacity: 0;
+    }
 </style>
 <script type="module">
     // Sample data
@@ -118,8 +121,8 @@
     ];
 
     const links = [
-        { source: 1, target: 2, length:150, k: 1.5 },
-        { source: 2, target: 3, length:150, k: 1.5 }
+        { source: 1, target: 2, length:150, k: 0.5 },
+        { source: 2, target: 3, length:150, k: 0.5 }
     ];
 
     
