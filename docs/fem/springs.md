@@ -1,6 +1,7 @@
 # Springs
 
 <svg xmlns="http://www.w3.org/2000/svg">
+    <defs>
     <filter x="-2%" y="-2%" width="104%" height="104%" filterUnits="objectBoundingBox" id="PencilTexture">
       <feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="3" result="noise">
       </feTurbulence>
@@ -45,6 +46,17 @@
       <feBlend mode="normal" in="out1" in2="f6" result="out2">
       </feBlend>
     </filter>
+    <marker 
+      id='head' 
+      orient="auto" 
+      markerWidth='3' 
+      markerHeight='3' 
+      refX='0' 
+      refY='1.5'
+    >
+      <path d='M0,0 V3 L3,1.5 Z' fill="context-stroke" />
+    </marker>
+  </defs>
 </svg>
 
 <svg width="750" height="500" id="pic1"></svg>
@@ -145,6 +157,7 @@
             .attr("y1", 0)
             .attr("x2", 10)
             .attr("y2", 0)
+            .attr("marker-end",'url(#head)')
             .classed("force",true)
             .classed("pen3",true);
         g.append("line")
