@@ -10,14 +10,22 @@
       import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
       const webR = new WebR();
       await webR.init();
-
+      console.log("init");
       // Create a PDF file containing a plot
       await webR.evalRVoid(`
         pdf()
         hist(rnorm(10000))
         dev.off()
       `);
-
+      console.log("hist done");
+      await webR.evalRVoid(`
+        install.packages("RTriangle")
+      `);
+      console.log("install done");
+      await webR.evalRVoid(`
+        #remotes::install_github("davidcsterratt/RTriangle", subdir="pkg")
+      `);
+      console.log("install done");
       // Obtain the contents of the file from the VFS
       const plotData = await webR.FS.readFile('/home/web_user/Rplots.pdf');
 

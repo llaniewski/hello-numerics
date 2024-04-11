@@ -149,10 +149,6 @@
             .attr("y", 55)
             .attr("text-anchor", "left");
         g.append("line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 10)
-            .attr("y2", 0)
             .attr("marker-end",'url(#head)')
             .classed("force",true)
             .classed("pen3",true);
