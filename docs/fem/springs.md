@@ -75,11 +75,8 @@
         stroke: #d2d65c;
         stroke-width: 5px;
     }
-    .pen1fill {
-        stroke: #ac2b3c;
-        fill: white;
-        fill-opacity: 0.0;
-        stroke-width: 5px;
+    .bgfill {
+        fill: var(--md-default-bg-color);
     }
     .penfilter {
         filter: url('#pencilTexture4');
@@ -104,7 +101,10 @@
         opacity: 0.7;
     }
     .pickers:has(>*.active) > * {
-        opacity: 0;
+        visibility : hidden;
+    }
+    .hide {
+        visibility : hidden;
     }
 </style>
 <script type="module">
@@ -129,7 +129,8 @@
     console.log(nodes);
 
     // Create SVG container
-    const svg_main_g = d3.select("#pic1").append("g").attr("transform", "translate(20, 40)");
+    const svg_main_g = d3.select("#pic1").append("g")
+        .attr("transform", "translate(20, 40)");
     const drawing = svg_main_g.append("g")
         .classed("penfilter",true);
     const pickers_g = svg_main_g.append("g")
@@ -143,18 +144,10 @@
 
     d3.selection.prototype.appendGuy = function() {
         let g = this.append("g");
-        g.append("line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 0)
-            .attr("y2", 25)
-            .classed("pen1",true);
-        g.append("line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 20)
-            .attr("y2", 10)
-            .classed("pen1",true);
+        g.append("text")
+            .attr("x", 15)
+            .attr("y", 55)
+            .attr("text-anchor", "left");
         g.append("line")
             .attr("x1", 0)
             .attr("y1", 0)
@@ -163,39 +156,16 @@
             .attr("marker-end",'url(#head)')
             .classed("force",true)
             .classed("pen3",true);
-        g.append("line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", -20)
-            .attr("y2", 10)
-            .classed("pen1",true);
-        g.append("line")
-            .attr("x1", 0)
-            .attr("y1", 25)
-            .attr("x2", -10)
-            .attr("y2", 55)
-            .classed("pen1",true);
-        g.append("line")
-            .attr("x1", 0)
-            .attr("y1", 25)
-            .attr("x2", 10)
-            .attr("y2", 55)
-            .classed("pen1",true);
-        g.append("line")
-            .attr("x1", 0)
-            .attr("y1", 0)
-            .attr("x2", 0)
-            .attr("y2", -10)
-            .classed("pen1",true);
-        g.append("text")
-            .attr("x", 15)
-            .attr("y", 55)
-            .attr("text-anchor", "left");
+        g.append("path")
+            .attr("d","M0,-10 L0,0 L0,25 M-20,10 L0,0 L20,10 M-10,55 L0,25 L10,55")
+            .classed("pen1",true)
+            .attr("fill","none");
         g.append("circle")
             .attr("cx", 0)
             .attr("cy", -20)
             .attr("r", 10)
-            .classed("pen1fill",true);
+            .classed("pen1",true)
+            .classed("bgfill",true);
         return g;
     };
     function update(tran) {
@@ -235,16 +205,32 @@
             return link;
         });
         let linkFun = link => link
-            .attr("x1", d => d.xsource)
-            .attr("y1", d => d.ysource)
-            .attr("x2", d => d.xtarget)
-            .attr("y2", d => d.ytarget);
+            .attr("d", d => {
+                let x = d.xsource;
+                let y = d.ysource;
+                let vx = d.xtarget - d.xsource;
+                let vy = d.ytarget - d.ysource;
+                let v = Math.sqrt(vx*vx+vy*vy);
+                let wx = -vy/v;
+                let wy =  vx/v;
+                let path = d3.path();
+                path.moveTo(x,y);
+                let n = Math.floor(d.length/10);
+                let g = 10;
+                for (let i = 0; i<n; i++) {
+                    path.lineTo(x+vx*(0.5+i)/n+wx*g,y+vy*(0.5+i)/n+wy*g);
+                    g = -g;
+                }
+                path.lineTo(x+vx,y+vy);
+                return path;
+            });
         let nodeFun = node => {
             node.attr("transform", d => `translate(${d.x}, ${d.y})`);
             node.select("text").text(d => d.name);
             node.select(".force")
                 .attr("x2",d=>d.xforce)
-                .attr("y2",d=>d.yforce);
+                .attr("y2",d=>d.yforce)
+                .classed("hide",d => d.xforce*d.xforce+d.yforce*d.yforce < 25);
             return node;
         };
         pickers_g.selectAll("g").data(pickers)
@@ -259,7 +245,12 @@
         ).attr("transform", d => `translate(${d.x}, ${d.y})`);
         const linkGroup = drawing.selectAll(".edge").data(links)
         .join(
-            enter => linkFun(enter.append("line").classed("edge",true).classed("pen2",true)),
+            enter => linkFun(
+                enter.append("path")
+                    .attr("stroke-linejoin","round")
+                    .attr("fill","none")
+                    .classed("edge",true)
+                    .classed("pen2",true)),
             update => linkFun(tran(update)),
             exit => exit.remove()
         );
@@ -302,7 +293,7 @@
     function updatePositions(event, d) {
         let n = nodes.length;
         nodes.push(randNode({ id: n+1, name: "New"}));
-        links.push({ source: n, target: n+1 });
+        links.push({ source: n, target: n+1, length:100, k:0.5 });
         update(obj => obj.transition().duration(1000));
         nodes.forEach(randNode);
         //console.log(nodes);
