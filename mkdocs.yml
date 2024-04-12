@@ -61,6 +61,7 @@ extra_javascript:
 theme:
   name: 'material'
   language: en
+  favicon: favicon.ico
   font:
     text: Roboto
     code: Roboto Mono

@@ -46,15 +46,8 @@
       <feBlend mode="normal" in="out1" in2="f6" result="out2">
       </feBlend>
     </filter>
-    <marker 
-      id='head' 
-      orient="auto" 
-      markerWidth='3' 
-      markerHeight='3' 
-      refX='0' 
-      refY='1.5'
-    >
-      <path d='M0,0 V3 L3,1.5 Z' fill="context-stroke" />
+    <marker id='head' orient="auto" markerWidth='3' markerHeight='3' refX='0' refY='1.5'>
+      <path d='M0,0 V3 L3,1.5 Z' fill="context-stroke"/>
     </marker>
   </defs>
 </svg>
@@ -119,14 +112,10 @@
         { x: 200, y: 0, xslide: true, fun: d => { nodes[1].x = d.x; } },
         { x: 400, y: 0, xslide: true, fun: d => { nodes[2].x = d.x; } }
     ];
-
     const links = [
         { source: 1, target: 2, length:150, k: 0.5 },
         { source: 2, target: 3, length:150, k: 0.5 }
     ];
-
-    
-    console.log(nodes);
 
     // Create SVG container
     const svg_main_g = d3.select("#pic1").append("g")
@@ -200,8 +189,8 @@
             target.yforce += force*dy/d;
             return link;
         });
-        let linkFun = link => link
-            .attr("d", d => {
+        let linkFun = function(link) {
+            link.attr("d", d => {
                 let x = d.xsource;
                 let y = d.ysource;
                 let vx = d.xtarget - d.xsource;
@@ -220,7 +209,9 @@
                 path.lineTo(x+vx,y+vy);
                 return path;
             });
-        let nodeFun = node => {
+            return link;
+        }
+        let nodeFun = function(node) {
             node.attr("transform", d => `translate(${d.x}, ${d.y})`);
             node.select("text").text(d => d.name);
             node.select(".force")
@@ -229,39 +220,45 @@
                 .classed("hide",d => d.xforce*d.xforce+d.yforce*d.yforce < 25);
             return node;
         };
-        pickers_g.selectAll("g").data(pickers)
-        .join(
-            enter => {
-                let g = enter.append("g").call(drag);
-                g.append("circle").attr("r",20);
-                return g;
-            },
-            update => update,
-            exit => exit.remove()
-        ).attr("transform", d => `translate(${d.x}, ${d.y})`);
-        const linkGroup = drawing.selectAll(".edge").data(links)
-        .join(
-            enter => linkFun(
-                enter.append("path")
-                    .attr("stroke-linejoin","round")
-                    .attr("fill","none")
-                    .classed("edge",true)
-                    .classed("pen2",true)),
-            update => linkFun(tran(update)),
-            exit => exit.remove()
-        );
-        const nodeGroup = drawing.selectAll(".node").data(nodes, function(d){return d.id})
-        .join(
-            enter => {
-                let g = enter.appendGuy()
-                    .classed("node",true)
-                    .attr("transform", d => `translate(${d.x}, ${d.y})`)
-                    .on("click", updatePositions)
-                return nodeFun(g);
-            },
-            update => nodeFun(tran(update)),
-            exit => exit.remove()
-        );
+        pickers_g
+            .selectAll("g")
+            .data(pickers)
+            .join(
+                enter => {
+                    let g = enter.append("g").call(drag);
+                    g.append("circle").attr("r",20);
+                    return g;
+                },
+                update => update,
+                exit => exit.remove()
+            )
+            .attr("transform", d => `translate(${d.x}, ${d.y})`);
+        const linkGroup = drawing
+            .selectAll(".edge")
+            .data(links)
+            .join(
+                enter => linkFun(
+                    enter.append("path")
+                        .attr("stroke-linejoin","round")
+                        .attr("fill","none")
+                        .classed("edge",true)
+                        .classed("pen2",true)),
+                update => linkFun(tran(update)),
+                exit => exit.remove()
+            );
+        const nodeGroup = drawing
+            .selectAll(".node")
+            .data(nodes, d => d.id)
+            .join(
+                enter => {
+                    let g = enter.appendGuy()
+                        .classed("node",true)
+                        .attr("transform", d => `translate(${d.x}, ${d.y})`);
+                    return nodeFun(g);
+                },
+                update => nodeFun(tran(update)),
+                exit => exit.remove()
+            );
     }
 
     update(obj => obj);
