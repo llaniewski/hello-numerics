@@ -52,7 +52,7 @@
   </defs>
 </svg>
 
-<svg width="750" height="500" id="pic1"></svg>
+<svg style="width: min(700px,100%);" viewBox="-30 -40 670 500" id="pic1"></svg>
 
 <style>
     .pen1 {
@@ -118,8 +118,7 @@
     ];
 
     // Create SVG container
-    const svg_main_g = d3.select("#pic1").append("g")
-        .attr("transform", "translate(20, 40)");
+    const svg_main_g = d3.select("#pic1");
     const drawing = svg_main_g.append("g")
         .classed("penfilter",true);
     const pickers_g = svg_main_g.append("g")
