@@ -143,13 +143,13 @@
     }
     function drag_update(update) {
         return d3.drag()
-                .on("start", (event, d) => d3.select(this).raise().classed("active", true))
-                .on("drag", (event, d) => {
-                    if (d.xslide) d.x = event.x;
-                    if (d.yslide) d.y = event.y;
-                    event.subject.update();
-                })
-                .on("end", (event, d) => d3.select(this).classed("active", false));
+            .on("start", (event, d) => d3.select(this).raise().classed("active", true))
+            .on("drag", (event, d) => {
+                if (d.xslide) d.x = event.x;
+                if (d.yslide) d.y = event.y;
+                event.subject.update();
+            })
+            .on("end", (event, d) => d3.select(this).classed("active", false));
     }
     class spring_guys_plot {
         constructor(svg, nodes, links) {
