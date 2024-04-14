@@ -49,6 +49,9 @@
     <marker id='head' orient="auto" markerWidth='3' markerHeight='3' refX='0' refY='1.5'>
       <path d='M0,0 V3 L3,1.5 Z' fill="context-stroke"/>
     </marker>
+    <marker id='head2' orient="auto" markerWidth='3' markerHeight='3' refX='2' refY='1.5'>
+      <path d='M0,0 L3,1.5 L0,3' stroke="context-stroke" stroke-linejoin="round" fill="none"/>
+    </marker>
   </defs>
 </svg>
 
@@ -56,6 +59,10 @@
 <svg style="width: min(700px,100%);" viewBox="-30 -40 670 200" id="pic2"></svg>
 
 <style>
+    .md-container {
+        background-image: url("/craft.png");
+        background-repeat: repeat;
+    }
     .pen1 {
         color: #ac2b3c;
         stroke: #ac2b3c;
@@ -70,10 +77,12 @@
         stroke-width: 5px;
     }
     .bgfill {
-        fill: var(--md-default-bg-color);
+        //fill: var(--md-default-bg-color);
+        fill: none;
     }
     .penfilter {
         filter: url('#pencilTexture4');
+        opacity: 0.8;
     }
     @keyframes pulse {
         0% { transform: scale(0.7); opacity: 0.5; }
@@ -110,14 +119,15 @@
         g.append("line")
             .attr("marker-end",'url(#head)')
             .classed("force",true)
-            .classed("pen3",true);
+            .classed("pen3",true)
+            .attr("y1",-10);
         g.append("path")
-            .attr("d","M0,-10 L0,0 L0,25 M-20,10 L0,0 L20,10 M-10,55 L0,25 L10,55")
+            .attr("d","M0,-20 L0,-10 L0,15 M-20,0 L0,-10 L20,0 M-10,45 L0,15 L10,45")
             .classed("pen1",true)
             .attr("fill","none");
         g.append("circle")
             .attr("cx", 0)
-            .attr("cy", -20)
+            .attr("cy", -30)
             .attr("r", 10)
             .classed("pen1",true)
             .classed("bgfill",true);
@@ -169,16 +179,14 @@
                 let source = this.nodes.find(node => node.id === link.source);
                 let target = this.nodes.find(node => node.id === link.target);
                 let dx = source.x - target.x;
+                link.ysource = source.y;
+                link.ytarget = target.y;
                 if (dx > 0) {
                     link.xsource = source.x - 20;
-                    link.ysource = source.y + 10;
                     link.xtarget = target.x + 20;
-                    link.ytarget = target.y + 10;
                 } else {
                     link.xsource = source.x + 20;
-                    link.ysource = source.y + 10;
                     link.xtarget = target.x - 20;
-                    link.ytarget = target.y + 10;
                 }
                 let dy = source.y - target.y;
                 let d = Math.sqrt(dx*dx+dy*dy);
@@ -205,14 +213,19 @@
                 .data(this.nodes, d => d.id)
                 .join(
                     enter => enter.append("g")
-                        .call(appendGuy)
+                        .call( s => {
+                            s.filter(d => d.name == "Wall").append("circle").attr("r",10);
+                            s.filter(d => d.name != "Wall").call(appendGuy);
+                            return s;
+                        })
+
                         .classed("node",true)
                     )
                 .attr("transform", d => `translate(${d.x}, ${d.y})`)
                 .call( s => s.select("text").text(d => d.name) )
                 .call( s => s.select(".force")
                     .attr("x2",d=>d.xforce)
-                    .attr("y2",d=>d.yforce)
+                    .attr("y2",d=>d.yforce-10)
                     .classed("hide",d => d.xforce*d.xforce+d.yforce*d.yforce < 25)
                 );
         }
@@ -268,8 +281,8 @@
     let pic2 = d3.select("#pic2");
     let pic2drawing = new spring_guys_plot(pic2,
         [
-            { id: 1, name: "Anne", head: 20, x: 0, y: 0 },
-            { id: 2, name: "Bart", head: 20, x: 200, y: 0 }
+            { id: 1, name: "Wall", head: 20, x: 0, y: 0 },
+            { id: 2, name: "Anne", head: 20, x: 200, y: 0 }
         ],
         [
             { source: 1, target: 2, length:150, k: 0.5 }
