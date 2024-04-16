@@ -52,16 +52,25 @@
     <marker id='head2' orient="auto" markerWidth='3' markerHeight='3' refX='2' refY='1.5'>
       <path d='M0,0 L3,1.5 L0,3' stroke="context-stroke" stroke-linejoin="round" fill="none"/>
     </marker>
+    <pattern id="star" width="20" height="20" patternUnits="userSpaceOnUse">
+        <line x1="-10" y1="0" x2="20" y2="30" stroke="black" class="pen1"/>
+        <line x1="0" y1="-10" x2="30" y2="20" stroke="black" class="pen1"/>
+    </pattern>
   </defs>
 </svg>
 
-<svg style="width: min(700px,100%);" viewBox="-30 -40 670 200" id="pic1"></svg>
-<svg style="width: min(700px,100%);" viewBox="-30 -40 670 200" id="pic2"></svg>
+<svg style="width: min(700px,100%);" viewBox="-30 -50 670 200" id="pic1"></svg>
+<svg style="width: min(700px,100%);" viewBox="-30 -50 670 200" id="pic2"></svg>
+<svg style="width: min(700px,100%);" viewBox="-30 -50 670 200" id="pic3"></svg>
 
 <style>
     .md-container {
         background-image: url("/craft.png");
         background-repeat: repeat;
+    }
+    .md-nav--primary .md-nav__title {
+        background: unset;
+        box-shadow: unset;
     }
     .pen1 {
         color: #ac2b3c;
@@ -214,11 +223,14 @@
                 .join(
                     enter => enter.append("g")
                         .call( s => {
-                            s.filter(d => d.name == "Wall").append("circle").attr("r",10);
+                            s.filter(d => d.name == "Wall").append("path")
+                                //.attr("d","M-20,-45 L20,-45 L20,45 L-20,45")
+                                .attr("d","M0,-45 L20,-45 L20,45 L0,45")
+                                .classed("pen1",true)
+                                .attr("fill","url(#star)");
                             s.filter(d => d.name != "Wall").call(appendGuy);
                             return s;
                         })
-
                         .classed("node",true)
                     )
                 .attr("transform", d => `translate(${d.x}, ${d.y})`)
@@ -261,28 +273,24 @@
     let pic1 = d3.select("#pic1");
     let pic1drawing = new spring_guys_plot(pic1,
         [
-            { id: 1, name: "Anne", head: 20, x: 0, y: 0 },
-            { id: 2, name: "Bart", head: 20, x: 200, y: 0 },
-            { id: 3, name: "Carl", head: 20, x: 400, y: 0 }
+            { id: 1, name: "Wall", head: 20, x: 0, y: 0 },
+            { id: 2, name: "Anne", head: 20, x: 200, y: 0 }
         ],
         [
-            { source: 1, target: 2, length:150, k: 0.5 },
-            { source: 2, target: 3, length:150, k: 0.5 }
+            { source: 1, target: 2, length:150, k: 0.5 }
         ]
     );
     let pic1pickers = new pickers(pic1drawing, 
         [
-            { x: 0, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[0].x = d.x; } },
             { x: 200, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[1].x = d.x; } },
-            { x: 400, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[2].x = d.x; } }
         ]
     );
 
     let pic2 = d3.select("#pic2");
     let pic2drawing = new spring_guys_plot(pic2,
         [
-            { id: 1, name: "Wall", head: 20, x: 0, y: 0 },
-            { id: 2, name: "Anne", head: 20, x: 200, y: 0 }
+            { id: 1, name: "Anne", head: 20, x: 0, y: 0 },
+            { id: 2, name: "Bart", head: 20, x: 200, y: 0 }
         ],
         [
             { source: 1, target: 2, length:150, k: 0.5 }
@@ -294,5 +302,27 @@
             { x: 200, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[1].x = d.x; } },
         ]
     );
+
+    let pic3 = d3.select("#pic3");
+    let pic3drawing = new spring_guys_plot(pic3,
+        [
+            { id: 1, name: "Anne", head: 20, x: 0, y: 0 },
+            { id: 2, name: "Bart", head: 20, x: 200, y: 0 },
+            { id: 3, name: "Carl", head: 20, x: 400, y: 0 }
+        ],
+        [
+            { source: 1, target: 2, length:150, k: 0.5 },
+            { source: 2, target: 3, length:150, k: 0.5 }
+        ]
+    );
+    let pic3pickers = new pickers(pic3drawing, 
+        [
+            { x: 0, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[0].x = d.x; } },
+            { x: 200, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[1].x = d.x; } },
+            { x: 400, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[2].x = d.x; } }
+        ]
+    );
+
+    
 
 </script>
