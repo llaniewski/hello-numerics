@@ -7,8 +7,11 @@
     <p id="loading">Please wait, webR is working on producing a plot...</div>
     <p id="link-container"></p>
     <script type="module">
+      console.log("start");
       import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
+      console.log("import done");
       const webR = new WebR();
+      console.log("new done");
       await webR.init();
       console.log("init");
       await webR.FS.mkdir('/library')
