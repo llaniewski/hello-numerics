@@ -4,16 +4,17 @@
   </head>
   <body>
     <h1>WebR PDF Plot Download Example</h1>
-    <p id="loading">Please wait, webR is working on producing a plot...</div>
+    <pre id="loading">Please wait, webR is working on producing a plot...</pre>
     <p id="link-container"></p>
     <script type="module">
-      console.log("start");
+      let ldg = document.getElementById('loading');
+      ldg.textContent = "Loading R [      ]";
       import { WebR } from 'https://webr.r-wasm.org/latest/webr.mjs';
-      console.log("import done");
+      ldg.textContent = "Loading R [#     ]";
       const webR = new WebR();
-      console.log("new done");
+      ldg.textContent = "Loading R [##    ]";
       await webR.init();
-      console.log("init");
+      ldg.textContent = "Loading R [###   ]";
       await webR.FS.mkdir('/library')
       const data = await fetch('/vfs/library.data');
       const metadata = await fetch('/vfs/library.js.metadata');
@@ -24,15 +25,15 @@
         }],
       }
       await webR.FS.mount("WORKERFS", options, '/library');
-      console.log("mount done");
+      ldg.textContent = "Loading R [####  ]";
       await webR.evalRVoid(`
         .libPaths(c(.libPaths(), "/library"))
       `);
-      console.log("set libpath");
+      ldg.textContent = "Loading R [##### ]";
       await webR.evalRVoid(`
         library(RTriangle)
       `);
-      console.log("load done");
+      ldg.textContent = "Loading R [######]";
 
 
       await webR.evalRVoid(`
@@ -61,7 +62,7 @@ segments(ret$P[ret$T[,2],1],ret$P[ret$T[,2],2],ret$P[ret$T[,3],1],ret$P[ret$T[,3
 segments(ret$P[ret$T[,3],1],ret$P[ret$T[,3],2],ret$P[ret$T[,1],1],ret$P[ret$T[,1],2])
 dev.off()
       `)
-      console.log("plot done");
+      ldg.textContent = "plot done";
       // Obtain the contents of the file from the VFS
       const plotData = await webR.FS.readFile('/home/web_user/Rplots.pdf');
 

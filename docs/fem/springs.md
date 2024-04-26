@@ -63,67 +63,13 @@
 <svg style="width: min(700px,100%);" viewBox="-30 -50 670 200" id="pic2"></svg>
 <svg style="width: min(700px,100%);" viewBox="-30 -50 670 200" id="pic3"></svg>
 
-<style>
-    .md-container {
-        background-image: url("/craft.png");
-        background-repeat: repeat;
-    }
-    .md-nav--primary .md-nav__title {
-        background: unset;
-        box-shadow: unset;
-    }
-    .pen1 {
-        color: #ac2b3c;
-        stroke: #ac2b3c;
-        stroke-width: 5px;
-    }
-    .pen2 {
-        stroke: #518c94;
-        stroke-width: 5px;
-    }
-    .pen3 {
-        stroke: #d2d65c;
-        stroke-width: 5px;
-    }
-    .bgfill {
-        //fill: var(--md-default-bg-color);
-        fill: none;
-    }
-    .penfilter {
-        filter: url('#pencilTexture4');
-        opacity: 0.8;
-    }
-    @keyframes pulse {
-        0% { transform: scale(0.7); opacity: 0.5; }
-        50% { transform: scale(1); opacity: 0.25; }
-        100% { transform: scale(0.7); opacity: 0.5; }
-    }
-    .pickers > * > circle {
-        animation: pulse 2s infinite;
-        fill: steelblue;
-    }
-    .pickers:has(>*:hover) > *:not(:hover) > circle {
-        animation: unset;
-        transform: scale(0.7);
-        opacity: 0.1;
-    }
-    .pickers > *:hover > circle {
-        animation: unset;
-        transform: scale(1);
-        opacity: 0.7;
-    }
-    .pickers:has(>*.active) > * {
-        visibility : hidden;
-    }
-    .hide {
-        visibility : hidden;
-    }
-</style>
+<link rel="stylesheet" href="/a/style.css"/>
 <script type="module">
     function appendGuy(g) {
         g.append("text")
             .attr("x", 15)
             .attr("y", 55)
+            .classed("pen0color",true)
             .attr("text-anchor", "left");
         g.append("line")
             .attr("marker-end",'url(#head)')
@@ -274,15 +220,15 @@
     let pic1drawing = new spring_guys_plot(pic1,
         [
             { id: 1, name: "Wall", head: 20, x: 0, y: 0 },
-            { id: 2, name: "Anne", head: 20, x: 200, y: 0 }
+            { id: 2, name: "Anne", head: 20, x: 250, y: 0 }
         ],
         [
-            { source: 1, target: 2, length:150, k: 0.5 }
+            { source: 1, target: 2, length: 200, k: 0.5 }
         ]
     );
     let pic1pickers = new pickers(pic1drawing, 
         [
-            { x: 200, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[1].x = d.x; } },
+            { x: 250, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[1].x = d.x; } },
         ]
     );
 
@@ -293,13 +239,13 @@
             { id: 2, name: "Bart", head: 20, x: 200, y: 0 }
         ],
         [
-            { source: 1, target: 2, length:150, k: 0.5 }
+            { source: 1, target: 2, length:200, k: 0.5 }
         ]
     );
     let pic2pickers = new pickers(pic2drawing, 
         [
             { x: 0, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[0].x = d.x; } },
-            { x: 200, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[1].x = d.x; } },
+            { x: 250, y: 0, xslide: true, fun: (obj, d) => { obj.nodes[1].x = d.x; } },
         ]
     );
 
@@ -311,8 +257,8 @@
             { id: 3, name: "Carl", head: 20, x: 400, y: 0 }
         ],
         [
-            { source: 1, target: 2, length:150, k: 0.5 },
-            { source: 2, target: 3, length:150, k: 0.5 }
+            { source: 1, target: 2, length:200, k: 0.5 },
+            { source: 2, target: 3, length:200, k: 0.5 }
         ]
     );
     let pic3pickers = new pickers(pic3drawing, 
