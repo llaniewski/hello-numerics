@@ -1,7 +1,18 @@
-.md-container {
-//        background-image: url("/craft.png");
-//        background-repeat: repeat;
+@media not screen and (min-width: 76.25em) {
+    .md-container {
+        background-image: url("/craft.png");
+        background-repeat: repeat;
+    }
 }
+
+@media screen and (min-width: 76.25em) {
+        .md-content {
+            background-image: url("/craft.png");
+            background-repeat: repeat;
+            box-shadow: 5px 5px 15px lightgray;
+    }
+}
+   
 .md-nav--primary .md-nav__title {
     background: unset;
     box-shadow: unset;
