@@ -1,0 +1,73 @@
+/* Pencil palette for figures, and matching colors for highlighting quantities
+   in code and equations. One color per role, used consistently across the
+   figure, the R snippet and the equation:
+     pen0  ink (labels, outlines)        pen1  bodies: walls, people, masses
+     pen2  springs, elements             pen3  forces, loads
+   Light values are chosen for the kraft-paper background. */
+
+:root {
+  --hn-pen0: #2b2622;
+  --hn-pen1: #a3283a;
+  --hn-pen2: #2f6f78;
+  --hn-pen3: #2c4a9a;
+  --hn-pick: #2f6f78;
+}
+body.quarto-dark {
+  --hn-pen0: #e8e2d8;
+  --hn-pen1: #ef7586;
+  --hn-pen2: #6cc5bb;
+  --hn-pen3: #8fa8ff;
+  --hn-pick: #6cc5bb;
+}
+
+/* Figures */
+svg.hn-figure {
+  width: min(700px, 100%);
+  height: auto;
+  display: block;
+  margin: 0.5rem auto;
+  overflow: visible;
+  touch-action: none;           /* dragging must not scroll the page on phones */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.hn-figure text { font-family: inherit; font-size: 15px; }
+.pen0 { color: var(--hn-pen0); stroke: var(--hn-pen0); fill: none; }
+.pen1 { color: var(--hn-pen1); stroke: var(--hn-pen1); stroke-width: 5px; fill: none; }
+.pen2 { color: var(--hn-pen2); stroke: var(--hn-pen2); stroke-width: 5px; fill: none; }
+.pen3 { color: var(--hn-pen3); stroke: var(--hn-pen3); stroke-width: 5px; fill: none; }
+.hn-figure text.pen0 { fill: var(--hn-pen0); stroke: none; }
+.hn-pencil { filter: url(#hn-pencil); opacity: 0.85; }
+.hn-hide { visibility: hidden; }
+
+/* Drag handles ("pickers"): pulsing circles that invite dragging */
+@keyframes hn-pulse {
+  0%   { transform: scale(0.7); opacity: 0.5; }
+  50%  { transform: scale(1);   opacity: 0.25; }
+  100% { transform: scale(0.7); opacity: 0.5; }
+}
+.hn-pickers > g { cursor: grab; }
+.hn-pickers > g > circle {
+  fill: var(--hn-pick);
+  animation: hn-pulse 2s infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.hn-pickers:has(> g:hover) > g:not(:hover) > circle { animation: none; transform: scale(0.7); opacity: 0.1; }
+.hn-pickers > g:hover > circle { animation: none; transform: scale(1); opacity: 0.6; }
+.hn-pickers > g.hn-active { cursor: grabbing; }
+.hn-pickers > g.hn-active > circle { animation: none; transform: scale(1); opacity: 0.35; }
+
+/* Quantities highlighted in code and equations, in the matching pen color */
+.hn-q-pen1 { color: var(--hn-pen1); font-weight: 600; }
+.hn-q-pen2 { color: var(--hn-pen2); font-weight: 600; }
+.hn-q-pen3 { color: var(--hn-pen3); font-weight: 600; }
+/* inside code blocks, beat Quarto's token colors (code span.fl etc.) */
+code span.hn-input.hn-q-pen1 { color: var(--hn-pen1); }
+code span.hn-input.hn-q-pen2 { color: var(--hn-pen2); }
+code span.hn-input.hn-q-pen3 { color: var(--hn-pen3); }
+@keyframes hn-flash {
+  from { background-color: rgba(255, 210, 60, 0.75); }
+  to   { background-color: transparent; }
+}
+.hn-changed { animation: hn-flash 0.6s ease-out; border-radius: 3px; }

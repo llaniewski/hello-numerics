@@ -1,0 +1,112 @@
+---
+title: "Demo A: quarto-live's own reactivity"
+# What `format: live-html` would do. In a book, a page's own `format` is
+# ignored (the book's html format wins), so enable quarto-live directly.
+# A page's `filters` replace the book-wide list, so macros.lua is repeated.
+filters:
+  - ../filters/macros.lua
+  - ../_extensions/r-wasm/live/live.lua
+ojs-engine: true
+engine: markdown
+webr:
+  packages: [knitr]   # quarto-live converts `define`d values with knitr::knit_print
+---
+
+This demo uses only what quarto-live provides. Drag the person; the spring force is computed by R in your browser, and the figure, the code and the equation follow.
+
+The force on the person is $F = -k\,(x_1 - L_0)$.
+
+```{ojs}
+//| echo: false
+import { d3 } from "../lib/js/kit/index.js"
+import { draw, interact } from "../lib/js/figures/spring1.js"
+
+L0 = 2
+
+// Placeholder until R defines F (quarto-live then redefines this variable).
+F = null
+
+// The figure is an OJS "view": dragging changes its value, x1.
+viewof x1 = {
+  const svg = d3.create("svg");
+  const node = svg.node();
+  let state = { x: 3, L0, F: NaN };
+  draw(svg, state);
+  node.value = state.x;
+  interact(svg, state, (s) => {
+    state = { ...state, x: s.x };
+    draw(svg, { ...state, F: node.lastF });   // move at once, with the last known force
+    node.value = s.x;
+    timing.sent += 1;
+    timing.lastSent = performance.now();
+    node.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  return node;
+}
+
+// Plain object, mutated in place (no reactivity needed)
+timing = ({ sent: 0, received: 0, lastSent: 0, lags: [] })
+```
+
+**The R code that runs** (a quarto-live `{webr}` cell; `x1` comes from the figure):
+
+```{webr}
+#| input: [x1]
+#| define: [F]
+#| edit: false
+k  <- 2
+L0 <- 2
+F  <- -k * (x1 - L0)
+```
+
+**The same code with the current value filled in** (a quarto-live interpolated block; it is *displayed* only, not run):
+
+```r
+x1 <- ${x1}
+k  <- 2
+L0 <- 2
+F  <- -k * (x1 - L0)
+```
+
+```{ojs}
+//| echo: false
+// Runs whenever R defines a new F: redraw with the force, and record the lag
+// between the latest drag event and this result.
+forceDrawn = {
+  if (F === null) return null;
+  const f = F[0];                       // `define` delivers R vectors as arrays
+  const node = viewof x1;
+  node.lastF = f;
+  draw(d3.select(node), { x: x1, L0, F: f });
+  if (F !== timing.lastF) {               // count new results from R only
+    timing.lastF = F;
+    timing.received += 1;
+    if (timing.lastSent) timing.lags.push(performance.now() - timing.lastSent);
+  }
+  window.hnDemoTiming = timing;
+  return f;
+}
+```
+
+```{ojs}
+//| echo: false
+eq = {
+  const el = html`<div style="text-align:center"></div>`;
+  const f = forceDrawn === null ? "\\ ?" : forceDrawn.toFixed(2);
+  window.katex.render(
+    `F = -k\\,(x_1 - L_0) = -2\\,(${x1.toFixed(2)} - 2) = ${f}\\ \\mathrm{N}`,
+    el, { displayMode: true });
+  return el;
+}
+```
+
+```{ojs}
+//| echo: false
+stats = {
+  forceDrawn;   // update after each result
+  const lags = timing.lags.slice(-30);
+  const avg = lags.length ? lags.reduce((a, b) => a + b, 0) / lags.length : 0;
+  const max = lags.length ? Math.max(...lags) : 0;
+  return md`<small id="hn-stats">Drag events sent to R: **${timing.sent}**, results received: **${timing.received}**; lag from latest drag to result (last 30): average **${avg.toFixed(0)} ms**, max **${max.toFixed(0)} ms**</small>`;
+}
+```

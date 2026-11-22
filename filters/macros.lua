@@ -1,11 +1,12 @@
 -- Embeds assets/tex/macros.tex into HTML pages, so assets/js/katex-setup.html
 -- can pass the shared macros to KaTeX. (The PDF build includes the same file
 -- in the LaTeX preamble directly.)
-local MACROS = "assets/tex/macros.tex"
+-- Path relative to this filter file (works for pages in any subfolder).
+local MACROS = "../assets/tex/macros.tex"
 
 function Meta(meta)
   if not quarto.doc.is_format("html") then return nil end
-  local path = quarto.project.directory .. "/" .. MACROS
+  local path = quarto.utils.resolve_path(MACROS)
   local f = io.open(path, "r")
   if not f then
     error("macros.lua: cannot read " .. path)

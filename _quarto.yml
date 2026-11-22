@@ -2,12 +2,13 @@ project:
   type: book
   output-dir: _book
   render:
-    - "*.qmd"
+    - "**/*.qmd"
     - "!sandbox/"
     - "!renv/"
     - "!node_modules/"
   resources:
     - assets/img/
+    - lib/
 
 book:
   title: "Hello Numerics"
@@ -29,6 +30,11 @@ book:
     - fem/index.qmd
     - fvm/index.qmd
     - lbm/index.qmd
+    # Temporary: demos for the quarto-live decision (plan.md, step 2.8)
+    - part: "Development demos"
+      chapters:
+        - demos/quarto-live.qmd
+        - demos/own-bridge.qmd
 
 filters:
   - filters/macros.lua
@@ -38,7 +44,9 @@ format:
     theme:
       light: [cosmo, assets/css/theme-light.scss]
       dark: [darkly, assets/css/theme-dark.scss]
-    css: assets/css/paper.css
+    css:
+      - assets/css/paper.css
+      - assets/css/pencil.css
     html-math-method:
       method: katex
       url: "https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/"

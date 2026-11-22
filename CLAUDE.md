@@ -83,7 +83,14 @@ Screenshots for checking layout: a Playwright script against a local server, in 
 
 ## Architecture / conventions
 
-- **Chapters** are listed in `_quarto.yml` under `book.chapters`, one folder per chapter (`math/`, `basics/`, …, each with `index.qmd`). Only `.qmd` files are rendered; `sandbox/`, `renv/` and `node_modules/` are excluded, and README, plan and CLAUDE.md are never part of the book.
+- **Chapters** are listed in `_quarto.yml` under `book.chapters`, one folder per chapter (`math/`, `basics/`, …, each with `index.qmd`). In a Quarto *book*, **only the listed chapters are project files**: any other `.qmd`, even in the project folder, renders as a standalone document next to its source (wrong output location, no book settings, project extensions not found). So every page, including demos, must be listed in `book.chapters`. `demos/` is a temporary "Development demos" part.
+- **Figures and live code** live in `lib/js/` (served as-is through `project.resources`):
+  - `kit/`: shared D3 drawing kit; `kit/d3.js` is the one place where the D3 version (7.9.2) is pinned.
+  - `figures/`: one module per figure, exporting `draw(svg, state)` and `interact(svg, state, onChange)`. Figures never compute physics; values come from R.
+  - `live/`: webR bridge prototype (`webr.js` pins webR 0.6.0, `bridge.js`, `livecode.js`, `liveeq.js`).
+  - Pages import these with relative paths (`../lib/js/...`).
+- **quarto-live on a page**: in a book, a page's `format: live-html` is ignored, so pages enable it with `filters: [../filters/macros.lua, ../_extensions/r-wasm/live/live.lua]` and `ojs-engine: true`. Repeat `macros.lua`, because a page's `filters` replace the book-wide list. Use `engine: markdown` on pages without native R chunks (otherwise Quarto picks Jupyter); pages with native R chunks need quarto-live's `_knitr.qmd` include. Further pitfalls are listed in plan.md, step 2.8.
+- Quarto styles the direct children of a code block as lines (`pre > code.sourceCode > span`). Code re-rendered from JavaScript must wrap its token spans in one wrapper span, or the token colors are lost.
 - **Themes**: Bootswatch `cosmo` (light) and `darkly` (dark), adjusted in `assets/css/theme-{light,dark}.scss` (Roboto fonts, colors). `assets/css/paper.css` gives the kraft-paper look (`assets/img/craft.png`): the content column is a paper card on wide screens, the whole page is paper on narrow ones, and dark mode darkens the paper with `background-blend-mode: multiply`. Dark-mode CSS uses the `body.quarto-dark` selector.
 - **Math**: KaTeX **0.19.1**, pinned through `html-math-method.url` (Quarto would otherwise load `katex@latest`). Shared macros live only in `assets/tex/macros.tex` (plain `\newcommand`, KaTeX-compatible). `filters/macros.lua` embeds that file into each HTML page, and `assets/js/katex-setup.html` (included after the body) wraps `katex.render`/`renderToString` so every render gets the macros and `trust` for `\htmlClass`. The PDF will include `macros.tex` in the LaTeX preamble.
 - Quarto loads KaTeX only on pages that contain math. Pages with live equations but no static math will need to make sure KaTeX is loaded (Phase 2).

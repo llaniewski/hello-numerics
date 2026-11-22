@@ -68,10 +68,13 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 
 ## Phase 2: Shared libraries and assets
 
-- [ ] **2.1 Color palette**: `assets/css/pencil.css` defines the pen colors as CSS variables (`--hn-pen0` …) with light and dark variants. Dark mode is tied to Quarto's dark theme (the `.quarto-dark` body class), not Material variables. The same colors are used to highlight quantities in code and equations.
-- [ ] **2.2 SVG defs**: move the pencil-texture filters and arrow markers from `springs.md` into `assets/svg/defs.svg`. A JS helper `ensureDefs()` puts them on the page once, and figures reference them by id.
+- [x] **2.1 Color palette**: `assets/css/pencil.css` defines the pen colors as CSS variables (`--hn-pen0` …) with light and dark variants. Dark mode is tied to Quarto's dark theme (the `.quarto-dark` body class), not Material variables. The same colors are used to highlight quantities in code and equations.
+  - Done: `assets/css/pencil.css`. Roles: pen0 ink, pen1 bodies (walls, people), pen2 springs/elements, pen3 forces. The light colors are darker than the old ones for contrast on kraft paper (the old yellow pen3 became blue). `.hn-q-pen*` classes color quantities in code and equations; `.hn-changed` flashes a changed value. The colors are placeholders for the author to tune.
+- [x] **2.2 SVG defs**: move the pencil-texture filters and arrow markers from `springs.md` into `assets/svg/defs.svg`. A JS helper `ensureDefs()` puts them on the page once, and figures reference them by id.
   - Watch out: with the default `filterUnits="objectBoundingBox"`, a filter applied to a perfectly horizontal or vertical line has a zero-size region, and **the line disappears**. Apply filters to groups, or use `filterUnits="userSpaceOnUse"` (found while testing in 0.4).
-- [ ] **2.3 Figure kit** `lib/js/kit/`: drawing primitives as ES modules (stick figure "guy", spring, wall, node, force arrow, dimension line) and drag helpers (dragging along x/y only, snapping). Each figure exports `draw(svg, state)` and `interact(svg, state, onChange)`.
+  - Done, as a JS module rather than an `.svg` file: `lib/js/kit/defs.js` (a synchronous insert, which also works in the headless PDF snapshot). Ids: `hn-pencil` (old pencilTexture4), `hn-head`, `hn-head-open`, `hn-hatch`.
+- [x] **2.3 Figure kit** `lib/js/kit/`: drawing primitives as ES modules (stick figure "guy", spring, wall, node, force arrow, dimension line) and drag helpers (dragging along x/y only, snapping). Each figure exports `draw(svg, state)` and `interact(svg, state, onChange)`.
+  - Done: `lib/js/kit/` (`d3.js` pins **D3 7.9.2** in one place; `shapes.js`: guy, wall, springPath, arrow; `drag.js`: pickers via d3.drag, mouse and touch). First figure: `lib/js/figures/spring1.js` (`draw(svg, state)` + `interact(svg, state, onChange)`; never computes physics).
 - [ ] **2.4 webR bridge** `lib/js/bridge.js`:
   - Share the single webR instance that quarto-live creates; if quarto-live doesn't expose it, decide between that and running webR directly.
   - Run a snippet with the given inputs, return the named list as JavaScript data via `toJs()`.
@@ -86,6 +89,33 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
   - a short written comparison: quarto-live's reactivity vs. our own bridge on plain webR.
 
   Record the decision here; steps 2.4–2.5 build on it.
+
+  **Demos built** (book part "Development demos"; same figure and snippet in both):
+  - `demos/quarto-live.qmd`: **A**, quarto-live only (OJS view → `{webr}` cell with `input`/`define` → OJS redraw + KaTeX; an interpolated block shows the code with the value).
+  - `demos/own-bridge.qmd`: **B**, own bridge on plain webR 0.6.0 (`lib/js/live/`: `webr.js`, `bridge.js`, `livecode.js`, `liveeq.js`).
+
+  **Measured** (headless Chromium on the desktop, 120 drag events at ~60/s, 2 runs each):
+
+  | | A: quarto-live | B: own bridge |
+  |---|---|---|
+  | first R result after page load | 5.8–6.4 s (webR + knitr and its dependencies) | 1.9 s |
+  | updates during the drag | 104 of 120 results; every event queued | all 121 evaluated, none needed skipping |
+  | lag behind the hand | avg 130–140 ms, max ~360 ms | R time 5–6 ms avg, max 9 ms |
+  | shown code = executed code | no: the interpolated block is a second copy | yes, by construction (same token list) |
+  | values in the equation | formatted in JavaScript | formatted by R (`{{expr}}` slots) |
+
+  **quarto-live pitfalls found:**
+  1. `define` works only with `edit: false` (editable cells never pass values back).
+  2. Values arrive as arrays (`[-2]`).
+  3. It needs `knitr` in webR, an extra download.
+  4. Interpolation skips one-letter names (`${x}`), because its pattern requires two or more characters.
+  5. Without placeholders, OJS cells show "is not defined" errors until R has loaded.
+  6. In a book, `format: live-html` on a page is ignored; enable it with `filters: [.../live.lua]` + `ojs-engine: true`, and repeat the book-wide filters, since a page's `filters` replace them.
+  7. No throttling: every drag position is queued in R.
+
+  quarto-live's strengths: editable exercise cells (readers change code and rerun it), grading, Pyodide support, and it is maintained by the webR author.
+
+  **Waiting for the author's decision** (both can coexist: B for figures, quarto-live for "try it yourself" cells).
 
 ## Phase 3: Springs showcase (`fem/springs.qmd`)
 
@@ -143,3 +173,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 | 2026-11-22 | Phase 0 | Tools installed (Quarto 1.11.9, TinyTeX, renv, Node 26 + Playwright 1.65.1, quarto-live v0.2.0 / webR 0.6.0). Open: native R 4.3.3 vs. webR's R 4.6.0. Matrix pinned to 1.6-5 because of the old R. |
 | 2026-11-22 | Phase 0 follow-up | R 4.6.2 installed by the author; renv.lock refreshed (Matrix 1.7-6). Node 26 on `PATH` globally. |
 | 2026-11-22 | Phase 1 | Quarto book in place: config, themes, kraft paper, KaTeX 0.19.1 with shared macros, placeholder chapters. MkDocs tree removed (copy in `sandbox/`). Custom webR package image dropped. Remote preview over Tailscale tested with the author's phone. |
+| 2026-11-22 | Phase 2 (2.1–2.3, 2.8) | Palette, SVG defs, D3 kit and first figure done. Demos A (quarto-live) and B (own bridge) built and measured; decision pending. Found: only book chapters belong to a Quarto book project, so demos are a temporary book part. |
