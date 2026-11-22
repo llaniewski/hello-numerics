@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-"Hello Numerics" is an open-source, interactive book on numerical methods for engineering. It's a **Quarto book** (`_quarto.yml`), with in-browser R through **webR** and the **quarto-live** extension, published at https://www.hello-numerics.com/ (hosting not decided yet: Netlify or GitHub Pages).
+"Hello Numerics" is an open-source, interactive book on numerical methods for engineering. It's a **Quarto book** (`_quarto.yml`), with in-browser R through **webR** and a small bridge of our own (`lib/js/live/`), published at https://www.hello-numerics.com/ (hosting not decided yet: Netlify or GitHub Pages).
 
 The project is at an **early stage**: the chapters are placeholders, and the interactive-figure machinery is still being built. The old MkDocs version is on the `legacy` branch.
 
@@ -40,14 +40,14 @@ The project is at an **early stage**: the chapters are placeholders, and the int
   \quad\Rightarrow\quad x = \left[\begin{matrix}{{x}}\end{matrix}\right]
   ```
   A matrix becomes rows joined by `\\` and entries by `&`, **row by row**, even though R stores matrices column by column. A vector becomes a column (`0.12 \\ 0.23`), and a scalar a single number.
-- **Formatting is done by an R helper** (e.g. `tex_body(x, digits)`). The same helper fills the templates in the browser (webR) and in the PDF build (native R), so both show identical numbers.
-- For iterative methods, the snippet returns the iteration history, and the template shows iteration `k` (e.g. `x^{({{k}})}`) as the reader scrubs or animates. Entries that changed from the previous step can be highlighted (the helper wraps them in KaTeX `\htmlClass`, which requires KaTeX's `trust` option).
+- **Formatting is done by R helpers** in `lib/R/tex.R` (`tex_body(x, digits)`, `tex_fill(template, env)`; a slot `{{expr|3}}` uses 3 significant digits, the default is 4). The same helper fills the templates in the browser (webR) and in the PDF build (native R), so both show identical numbers.
+- For iterative methods, the snippet returns the iteration history, and the template shows iteration `k` (e.g. `x^{({{k}})}`) as the reader scrubs or animates. Entries that changed are highlighted, per entry, with a fading highlight (KaTeX `\htmlClass`/`\htmlStyle`, which require KaTeX's `trust` option).
 
 The old prototypes (D3 stick figures, webR experiments, the hand-drawn springs page) are in `sandbox/legacy-docs/` for reference; `sandbox/legacy-docs/fem/springs.md` is the reference for the pencil look and drawing helpers.
 
 ## Migration in progress
 
-The move to Quarto + webR + quarto-live is tracked step by step in [plan.md](plan.md). Read it before starting work, and update its checkboxes and Log when finishing a step.
+The move to Quarto + webR is tracked step by step in [plan.md](plan.md). Read it before starting work, and update its checkboxes and Log when finishing a step.
 
 ## Git conventions
 
@@ -60,7 +60,7 @@ The move to Quarto + webR + quarto-live is tracked step by step in [plan.md](pla
 - **Quarto 1.11.9** at `~/.local/bin/quarto`; TinyTeX for the PDF.
 - **R packages** via `renv`: dependencies are listed in `DESCRIPTION`, renv uses the `explicit` snapshot type, and `renv.lock` pins the versions. To add a package: add it to `DESCRIPTION`, run `renv::install()`, then `renv::snapshot()`. Local R is 4.6.2 (from CRAN's Ubuntu repository plus r2u); webR runs R 4.6.0, the same minor version.
 - **Node 26** is on `PATH` through `~/opt/node/bin`, set in the author's `~/.bashrc`. `~/opt/node` is a symlink to `~/opt/node-v26.13.1-linux-x64`; the system Node 18 is too old for Playwright. Non-interactive shells may not read `.bashrc`; if `node --version` isn't 26, run `export PATH=$HOME/opt/node/bin:$PATH` first. Playwright 1.65.1 (pinned) with headless Chromium.
-- **quarto-live v0.2.0** is committed in `_extensions/r-wasm/live`; it loads webR v0.6.0, which runs R 4.6.0 in the browser. Don't edit the extension's files; update it with `quarto add r-wasm/quarto-live@<tag>`.
+- **webR v0.6.0** (R 4.6.0 in the browser), loaded from webr.r-wasm.org and pinned in `lib/js/live/webr.js`. quarto-live is **not** used (decided in plan.md, step 2.8: our own bridge is faster, runs exactly the shown code, and gives full control over the R environment). If editable "try it yourself" cells are wanted later, decide then between a custom implementation and quarto-live.
 - Node scripts in the scratchpad must import Playwright by absolute path (`<repo>/node_modules/playwright/index.mjs`), because ES modules resolve packages relative to the script's location.
 
 ## Commands
@@ -70,6 +70,8 @@ quarto preview                 # live-reload preview on localhost
 quarto render                  # build the HTML book into _book/
 Rscript -e 'renv::restore()'   # install the pinned R packages
 npm ci                         # install Playwright (then: npx playwright install chromium)
+Rscript -e 'testthat::test_dir("tests/testthat")'   # R helper tests
+node tests/browser/live-figures.mjs                    # after quarto render: drag every live figure, check code/equation/figure agree
 ```
 
 To let the author test on their phone, serve on the Tailscale interface only (computer `big-desktop`, 100.109.112.73), never on all interfaces:
@@ -87,13 +89,26 @@ Screenshots for checking layout: a Playwright script against a local server, in 
 - **Figures and live code** live in `lib/js/` (served as-is through `project.resources`):
   - `kit/`: shared D3 drawing kit; `kit/d3.js` is the one place where the D3 version (7.9.2) is pinned.
   - `figures/`: one module per figure, exporting `draw(svg, state)` and `interact(svg, state, onChange)`. Figures never compute physics; values come from R.
-  - `live/`: webR bridge prototype (`webr.js` pins webR 0.6.0, `bridge.js`, `livecode.js`, `liveeq.js`).
+  - `live/`: the webR bridge. `webr.js` (one webR per page, loads `lib/R/tex.R`, installs packages), `livecode.js` (tokenizes the snippet with R's `getParseData` and rewrites only the input literals: shown text = executed text), `bridge.js` (runs the snippet; one evaluation at a time, intermediate states skipped; reads back outputs and slots in one R call), `liveeq.js` (`{{expr|digits}}` templates), `changes.js` (fading highlight), `mount.js` (wires a figure, its snippet and equations; `?debug` shows timings).
+- `lib/R/tex.R`: LaTeX formatting of R values, shared by webR and native R. Tests: `tests/testthat/` (`Rscript -e 'testthat::test_dir("tests/testthat")'`).
+- **Live figures** are written as a div, turned into HTML by `filters/live.lua`:
+  ````markdown
+  ::: {.live-figure figure="spring1"}
+  ```r
+  x1 <- 3
+  F  <- -2 * (x1 - 2)
+  ```
+  $$ F = {{F|3}} $$
+  :::
+  ````
+  The figure module (`lib/js/figures/<name>.js`) exports `inputs` (R variables the reader changes; numeric literals in the snippet), `outputs` (R expressions it needs back as numbers), `colors` (`{x1: "pen1"}`), `draw` and `interact`; its state uses the R names. Div attributes `inputs`, `outputs`, `colors="x1:pen1"` and `packages="Matrix"` override or add to these. Write the snippet as ```` ```r ```` (not ```` ```{r} ````), so knitr never runs it. The equations' placeholder math (slots shown as `?`) also makes Quarto load KaTeX.
+- In **inline** code, Quarto turns a leading `{{…}}` into `{…}` (its escape for inline executable code); write `` `{{{expr}}}` `` to show `{{expr}}`. Code blocks and math are not affected.
   - Pages import these with relative paths (`../lib/js/...`).
-- **quarto-live on a page**: in a book, a page's `format: live-html` is ignored, so pages enable it with `filters: [../filters/macros.lua, ../_extensions/r-wasm/live/live.lua]` and `ojs-engine: true`. Repeat `macros.lua`, because a page's `filters` replace the book-wide list. Use `engine: markdown` on pages without native R chunks (otherwise Quarto picks Jupyter); pages with native R chunks need quarto-live's `_knitr.qmd` include. Further pitfalls are listed in plan.md, step 2.8.
+- Use `engine: markdown` on pages without native R chunks (otherwise Quarto picks Jupyter). A page's own `filters` replace the book-wide list, so avoid page-level `filters`.
 - Quarto styles the direct children of a code block as lines (`pre > code.sourceCode > span`). Code re-rendered from JavaScript must wrap its token spans in one wrapper span, or the token colors are lost.
 - **Themes**: Bootswatch `cosmo` (light) and `darkly` (dark), adjusted in `assets/css/theme-{light,dark}.scss` (Roboto fonts, colors). `assets/css/paper.css` gives the kraft-paper look (`assets/img/craft.png`): the content column is a paper card on wide screens, the whole page is paper on narrow ones, and dark mode darkens the paper with `background-blend-mode: multiply`. Dark-mode CSS uses the `body.quarto-dark` selector.
-- **Math**: KaTeX **0.19.1**, pinned through `html-math-method.url` (Quarto would otherwise load `katex@latest`). Shared macros live only in `assets/tex/macros.tex` (plain `\newcommand`, KaTeX-compatible). `filters/macros.lua` embeds that file into each HTML page, and `assets/js/katex-setup.html` (included after the body) wraps `katex.render`/`renderToString` so every render gets the macros and `trust` for `\htmlClass`. The PDF will include `macros.tex` in the LaTeX preamble.
-- Quarto loads KaTeX only on pages that contain math. Pages with live equations but no static math will need to make sure KaTeX is loaded (Phase 2).
+- **Math**: KaTeX **0.19.1**, pinned through `html-math-method.url` (Quarto would otherwise load `katex@latest`). Shared macros live only in `assets/tex/macros.tex` (plain `\newcommand`, KaTeX-compatible). `filters/macros.lua` embeds that file into each HTML page, and `assets/js/katex-setup.html` (included after the body) wraps `katex.render`/`renderToString` so every render gets the macros and `trust` for `\htmlClass` and `\htmlStyle`. The PDF will include `macros.tex` in the LaTeX preamble.
+- Quarto loads KaTeX only on pages that contain math; live equations always contain placeholder math, so this is covered.
 - **Asset paths** in CSS are relative (`../img/craft.png`). `assets/img/` is copied to the output through `project.resources`. Don't use root-absolute paths (`/assets/...`), because the site may be hosted under a subpath (`*.github.io/hello-numerics/`).
 - **R packages in the browser**: webR installs packages from repo.r-wasm.org, which has the same versions of `Matrix` (1.7-6) and `RTriangle` (1.6-0.15) as `renv.lock`. The old custom package image (`vfs/`) was dropped.
 - SVG filters with the default `filterUnits="objectBoundingBox"` make perfectly horizontal or vertical lines disappear (their bounding box has zero size). Apply filters to groups, or use `userSpaceOnUse`.

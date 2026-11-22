@@ -3,7 +3,7 @@
 // math rendering (on DOMContentLoaded). Every katex.render call on the page,
 // including Quarto's later typesetting, gets:
 //  - the shared macros from assets/tex/macros.tex (embedded by filters/macros.lua),
-//  - trust for \htmlClass (used to highlight changing values in live equations).
+//  - trust for \htmlClass and \htmlStyle (used to highlight changing values in live equations).
 (function () {
   if (!window.katex || window.katex.__hnWrapped) return;
   const katex = window.katex;
@@ -22,7 +22,7 @@
     }
   }
 
-  const trust = (ctx) => ctx.command === '\\htmlClass';
+  const trust = (ctx) => ctx.command === '\\htmlClass' || ctx.command === '\\htmlStyle';
   const withDefaults = (opts) => Object.assign({ throwOnError: false }, opts, { macros, trust });
 
   katex.render = (tex, el, opts) => render(tex, el, withDefaults(opts));

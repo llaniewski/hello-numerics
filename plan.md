@@ -1,4 +1,4 @@
-# Migration plan: Quarto + webR + quarto-live
+# Migration plan: Quarto + webR
 
 This file lists the steps for moving the book to the new setup and tracks progress. The goals and design decisions behind it are in [CLAUDE.md](CLAUDE.md).
 
@@ -26,6 +26,7 @@ Everything is installed **in user space, without sudo**. The only possible excep
   - Checked: headless Chromium renders the pencil `feTurbulence`/`feDisplacementMap` filter correctly at 3× scale.
 - [x] **0.5 Add the quarto-live extension**: `quarto add r-wasm/quarto-live`. This commits it into `_extensions/`. Record the extension version and the webR version it loads.
   - Done: quarto-live **v0.2.0** (released 2026-05-22; its `_extension.yml` still says `0.1.3-dev`). It loads **webR v0.6.0**, which runs **R 4.6.0** in the browser. webR v0.6.1 (2026-11-10) exists and can be selected with the `engine-url` option, but keep the version quarto-live was released with unless there's a reason to change.
+  - Later **removed** (2.8): the book uses plain webR 0.6.0 directly.
 - [x] **0.6 Write a short "Getting started" section in `README.md`** with the commands above and how to preview (`quarto preview`) and build.
 - [x] **0.7 Update `CLAUDE.md`**: replace the MkDocs commands and conventions with the Quarto ones (repeat whenever the conventions change). Done in Phase 1.
 - [x] **0.8 `.gitignore`**: `sandbox/`, Quarto output (`_book/`, `.quarto/`), PDF intermediates (`_figstate/`, `_figs/`), `node_modules/`.
@@ -41,9 +42,9 @@ math/ basics/ fdm/ fem/ fvm/ lbm/   chapters (.qmd)
 assets/                css, images, svg defs, favicon
 lib/js/                figure kit + webR bridge (ES modules)
 lib/R/                 R helpers (tex_body, …)
-_extensions/           quarto-live and our own shortcodes/filters
+filters/               Lua filters (KaTeX macros, live figures)
 scripts/               PDF snapshot and build scripts
-tests/                 snippet tests (testthat)
+tests/                 R helper tests (testthat), browser checks (Playwright)
 sandbox/               old prototypes, not rendered, git-ignored
 ```
 
@@ -75,16 +76,20 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
   - Done, as a JS module rather than an `.svg` file: `lib/js/kit/defs.js` (a synchronous insert, which also works in the headless PDF snapshot). Ids: `hn-pencil` (old pencilTexture4), `hn-head`, `hn-head-open`, `hn-hatch`.
 - [x] **2.3 Figure kit** `lib/js/kit/`: drawing primitives as ES modules (stick figure "guy", spring, wall, node, force arrow, dimension line) and drag helpers (dragging along x/y only, snapping). Each figure exports `draw(svg, state)` and `interact(svg, state, onChange)`.
   - Done: `lib/js/kit/` (`d3.js` pins **D3 7.9.2** in one place; `shapes.js`: guy, wall, springPath, arrow; `drag.js`: pickers via d3.drag, mouse and touch). First figure: `lib/js/figures/spring1.js` (`draw(svg, state)` + `interact(svg, state, onChange)`; never computes physics).
-- [ ] **2.4 webR bridge** `lib/js/bridge.js`:
-  - Share the single webR instance that quarto-live creates; if quarto-live doesn't expose it, decide between that and running webR directly.
+- [x] **2.4 webR bridge** `lib/js/live/bridge.js`:
   - Run a snippet with the given inputs, return the named list as JavaScript data via `toJs()`.
   - Throttle while dragging: one evaluation at a time, and only the latest pending state runs next.
-  - A debug overlay, turned on with `?debug` in the URL, showing webR load time, the R evaluation time per update (last/average/max), and how many intermediate drag states were skipped. This gives concrete numbers when judging responsiveness by hand.
-- [ ] **2.5 Live code**: rewrite the input literals in the shown snippet (`x1 <- 1.35`), finding them with R's `getParseData()`, and run exactly the displayed text. Color the inputs and highlight values that just changed.
-- [ ] **2.6 Live equations** `lib/js/livetex.js` + `lib/R/tex.R`: fill `{{expr}}` slots (with an optional digits setting such as `{{x|3}}`) using `tex_body()` evaluated in R, and render with KaTeX (with `trust` on, for `\htmlClass`). Use the same `tex_body()` in native R for the PDF.
-  - Note: Quarto loads KaTeX only on pages that contain static math, so a page with only live equations must make sure KaTeX is loaded.
-- [ ] **2.7 Authoring interface**: one Quarto shortcode or filter (e.g. `{{< live-figure springs >}}`) that ties together the figure module, the snippet chunk and the equation templates, and outputs the right content for HTML or PDF.
-- [ ] **2.8 First evaluate quarto-live's own reactivity** (OJS `input`/`define` options on webR cells) on a small example. **Author decides after this step.** Prepare:
+  - A debug overlay, turned on with `?debug` in the URL, showing webR load time, the R evaluation time per update (last/average/max), and how many intermediate drag states were skipped.
+  - Done: plain webR 0.6.0 (`webr.js`: one instance per page, loads `lib/R/tex.R` into R's global environment, installs packages once). Each figure runs in its own environment; outputs and equation slots come back in one R call. `?debug` shows the timings under each figure. Measured (headless, desktop): webR ready in 1.4 s, R ~15 ms per update, 0 of 121 drag states skipped.
+- [x] **2.5 Live code**: rewrite the input literals in the shown snippet (`x1 <- 1.35`), finding them with R's `getParseData()`, and run exactly the displayed text. Color the inputs and highlight values that just changed.
+  - Done: `livecode.js`. Negative literals (`x1 <- -3`) are handled. Changed values get a highlight that fades over 2.5 s (`changes.js` + `.hn-changed` in `pencil.css`; it stays lit while dragging and continues smoothly across re-renders). Colors and duration are CSS variables (`--hn-changed-bg`, `--hn-changed-fade`).
+- [x] **2.6 Live equations** `lib/js/live/liveeq.js` + `lib/R/tex.R`: fill `{{expr}}` slots (with an optional digits setting such as `{{x|3}}`) using `tex_body()` evaluated in R, and render with KaTeX (with `trust` on, for `\htmlClass`). Use the same `tex_body()` in native R for the PDF.
+  - Done: `tex.R` has `tex_number`, `tex_entries`, `tex_body`, `tex_fill` (for the PDF) and the slot parser; tested in `tests/testthat/test-tex.R`. In the browser, R formats every entry and JavaScript only joins them, so each matrix entry is highlighted separately when it changes. KaTeX loading: the live equation starts as placeholder math, which makes Quarto load KaTeX.
+- [x] **2.7 Authoring interface**: one Quarto shortcode or filter (e.g. `{{< live-figure springs >}}`) that ties together the figure module, the snippet chunk and the equation templates, and outputs the right content for HTML or PDF.
+  - Done: a div `::: {.live-figure figure="spring1"}` around an ```` ```r ```` snippet and `$$…{{expr}}…$$` equations (`filters/live.lua` → `lib/js/live/mount.js`). The figure module declares `inputs`, `outputs` and `colors`. Non-HTML output gets the snippet and the equations with `?` for now (Phase 4).
+  - Automated check: `tests/browser/live-figures.mjs` (serves `_book/`, drags every live figure, checks shown code = run code, figure and equation values = R's, highlight present, no page errors).
+  - Known limitation: numbered live equations (`$$ … $$ {#eq-…}`) are not supported yet.
+- [x] **2.8 First evaluate quarto-live's own reactivity** (OJS `input`/`define` options on webR cells) on a small example. **Author decides after this step.** Prepare:
   - a demo page in `sandbox/` with a draggable point feeding a quarto-live webR cell, showing what it can and can't do (live literals in code? redrawing equations? latency?);
   - a short written comparison: quarto-live's reactivity vs. our own bridge on plain webR.
 
@@ -115,7 +120,7 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 
   quarto-live's strengths: editable exercise cells (readers change code and rerun it), grading, Pyodide support, and it is maintained by the webR author.
 
-  **Waiting for the author's decision** (both can coexist: B for figures, quarto-live for "try it yourself" cells).
+  **Decision (author): B, own bridge; quarto-live removed completely.** Reasons: speed, and more control over the R environment. No editable snippets are planned for now; if they are wanted later, decide then between a custom implementation and quarto-live. Demo A and `_extensions/r-wasm/live` were removed; demo B became `demos/live-spring.qmd`.
 
 ## Phase 3: Springs showcase (`fem/springs.qmd`)
 
@@ -160,7 +165,7 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 - [x] **R package pinning**: use `renv`.
 - [x] **Old prototypes**: move to `sandbox/` for local reference, git-ignored and never committed; the originals stay on the `legacy` branch.
 - [x] **Git**: commit to the `rewrite` branch. Commits are authored by Claude, and the message states the work was done under L Laniewski-Wollk's direction.
-- [ ] **quarto-live reactivity vs. own bridge**: the author decides after the demo in 2.8.
+- [x] **quarto-live reactivity vs. own bridge**: own bridge on plain webR; quarto-live removed (2.8).
 - [x] **R version**: native R upgraded to **4.6.2** by the author (CRAN repository plus r2u). `Matrix` is unpinned (now 1.7-6), `renv.lock` records R 4.6.2, and `quarto check` passes.
 - [x] **Node on `PATH`**: use Node 26 globally (decided). The symlink `~/opt/node` → `~/opt/node-v26.13.1-linux-x64` is in place (for a future upgrade, only the symlink changes). The author added `export PATH="$HOME/opt/node/bin:$PATH"` to `~/.bashrc`.
 - [ ] **Hosting**: Netlify with the custom domain vs. GitHub Pages on `github.io`. The author decides later; this also settles `CNAME` and the cross-origin isolation headers.
@@ -174,3 +179,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 | 2026-11-22 | Phase 0 follow-up | R 4.6.2 installed by the author; renv.lock refreshed (Matrix 1.7-6). Node 26 on `PATH` globally. |
 | 2026-11-22 | Phase 1 | Quarto book in place: config, themes, kraft paper, KaTeX 0.19.1 with shared macros, placeholder chapters. MkDocs tree removed (copy in `sandbox/`). Custom webR package image dropped. Remote preview over Tailscale tested with the author's phone. |
 | 2026-11-22 | Phase 2 (2.1–2.3, 2.8) | Palette, SVG defs, D3 kit and first figure done. Demos A (quarto-live) and B (own bridge) built and measured; decision pending. Found: only book chapters belong to a Quarto book project, so demos are a temporary book part. |
+| 2026-11-22 | Phase 2 (2.4–2.8) | Author chose the own bridge; quarto-live removed. Bridge, live code with fading highlight, `tex.R` + live equations, `.live-figure` filter, R tests and browser check done. Fixed stale renv sandbox links left by the R upgrade. |

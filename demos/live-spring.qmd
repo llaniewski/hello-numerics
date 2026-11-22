@@ -1,0 +1,60 @@
+---
+title: "Demo: a live figure"
+engine: markdown
+---
+
+Drag the person. The value in the code changes, **exactly that code** runs in R in your browser, and the force arrow and the equation are filled in with the values from R. Changed values light up and slowly fade. Add `?debug` to the page address to see timings.
+
+The force on the person is $F = -k\,(x_1 - L_0)$.
+
+::: {.live-figure figure="spring1"}
+```r
+x1 <- 3
+k  <- 2
+L0 <- 2
+F  <- -k * (x1 - L0)
+```
+
+$$
+F = -k\,(x_1 - L_0) = -{{k}}\,({{x1}} - {{L0}}) = {{F}}\ \mathrm{N}
+$$
+:::
+
+## Matrices and vectors
+
+A slot can hold a whole matrix or vector: `\mat{ {{K}} }` expands to the rows of `K`. Here the same spring is written with its stiffness matrix: the forces at the two ends are $f = K u$.
+
+::: {.live-figure figure="spring1"}
+```r
+x1 <- 2.5
+k  <- 2
+L0 <- 2
+K  <- k * matrix(c(1, -1, -1, 1), 2, 2)
+u  <- c(0, x1 - L0)
+f  <- K %*% u
+F  <- -f[2]
+```
+
+$$
+\mat{ {{f}} } = \mat{ {{K}} } \mat{ {{u|3}} }
+$$
+:::
+
+## How this page is written
+
+````markdown
+::: {.live-figure figure="spring1"}
+```r
+x1 <- 3
+k  <- 2
+L0 <- 2
+F  <- -k * (x1 - L0)
+```
+
+$$
+F = -k\,(x_1 - L_0) = -{{k}}\,({{x1}} - {{L0}}) = {{F}}\ \mathrm{N}
+$$
+:::
+````
+
+The figure module `lib/js/figures/spring1.js` declares that the reader changes `x1`, and that it needs `L0` and `F` back from R. Each `{{{expr}}}` in the equation is evaluated in R after the snippet has run, and formatted by `tex_body()` from `lib/R/tex.R` (`{{{F|2}}}` would use 2 significant digits).

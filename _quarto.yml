@@ -30,14 +30,14 @@ book:
     - fem/index.qmd
     - fvm/index.qmd
     - lbm/index.qmd
-    # Temporary: demos for the quarto-live decision (plan.md, step 2.8)
+    # Temporary: development demos (removed once real chapters show the same)
     - part: "Development demos"
       chapters:
-        - demos/quarto-live.qmd
-        - demos/own-bridge.qmd
+        - demos/live-spring.qmd
 
 filters:
   - filters/macros.lua
+  - filters/live.lua
 
 format:
   html:

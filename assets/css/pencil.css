@@ -66,8 +66,29 @@ svg.hn-figure {
 code span.hn-input.hn-q-pen1 { color: var(--hn-pen1); }
 code span.hn-input.hn-q-pen2 { color: var(--hn-pen2); }
 code span.hn-input.hn-q-pen3 { color: var(--hn-pen3); }
-@keyframes hn-flash {
-  from { background-color: rgba(255, 210, 60, 0.75); }
+/* Changed values: highlighted, then slowly fading back (code and equations).
+   lib/js/live/changes.js sets --hn-age (a negative delay) on re-rendered
+   elements, so a fade continues where it was instead of restarting.
+   While dragging, values change continuously and stay highlighted. */
+:root {
+  --hn-changed-bg: rgba(255, 205, 40, 0.85);
+  --hn-changed-fade: 2.5s;
+}
+body.quarto-dark {
+  --hn-changed-bg: rgba(200, 150, 20, 0.6);
+}
+@keyframes hn-changed {
+  from { background-color: var(--hn-changed-bg); }
   to   { background-color: transparent; }
 }
-.hn-changed { animation: hn-flash 0.6s ease-out; border-radius: 3px; }
+.hn-changed {
+  animation: hn-changed var(--hn-changed-fade) cubic-bezier(0.5, 0, 0.75, 1) both;
+  animation-delay: var(--hn-age, 0ms);
+  border-radius: 3px;
+}
+
+/* Live figures (filters/live.lua) */
+.hn-live { margin: 1rem 0; }
+.hn-live-eq { overflow-x: auto; overflow-y: hidden; }
+.hn-live-status { font-size: 0.85em; opacity: 0.75; min-height: 1.2em; }
+.hn-live-status.hn-live-error { color: var(--bs-danger, #b00020); opacity: 1; }
