@@ -157,7 +157,7 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 
 - [x] **5.1 Snippet tests** (changed): no separate snippet extraction. Every snippet already runs in native R in the PDF build (the filter stops the build on any R error), and the browser check runs each figure's full code in native R and compares the numbers with webR's. `tests/testthat/` tests the R helpers.
 - [x] **5.2 Workflow `.github/workflows/book.yml`** on push, pull requests and by hand: R 4.6.2 + renv (`r-lib/actions`), Quarto 1.11.9 + TinyTeX, Node (`.node-version`) + Playwright Chromium (cached), then R helper tests → `scripts/build.sh` (site + PDF) → browser check of the live figures → artifacts `book-site` and `book-pdf`.
-  - Not run yet: it runs on the first push of `rewrite` (pushing is the author's call). Action versions checked with `git ls-remote` on 2026-11-22.
+  - First run passed on GitHub (2026-11-22, about 4 min): 21 R tests, site + PDF, all browser checks. Tested on a throwaway `ci-test` branch first, so no fix commits were needed. Action versions checked with `git ls-remote` on 2026-11-22.
 - [x] **5.3 Deployment**: the GitHub Pages job is written and commented out, with the Netlify note (`_headers` for cross-origin isolation vs. `coi-serviceworker`). The site has no hard-coded domain beyond `site-url`.
 - [x] **5.4 Smoke test**: the browser check (`tests/browser/live-figures.mjs`) runs in CI.
 
@@ -193,3 +193,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 | 2026-11-22 | Phase 3 (3.1–3.3, 3.5) | `fem/springs.qmd` with five live figures, two sliders and example text; figures `people` and `chain`; figure modules get `opts`; packages only block the scopes that need them; "Full code" button moved under the code block. Waiting for the author's manual check (3.6). |
 | 2026-11-22 | Phase 4 | PDF build: native R evaluation of live scopes in the filter, Playwright figure snapshots, `pdf-states`, slider notes, links to interactive versions; `scripts/build.sh`; site links the PDF. |
 | 2026-11-22 | Phase 5 | GitHub Actions workflow (tests, site + PDF, browser check, artifacts; Pages deployment commented out). Not run on GitHub yet. |
+| 2026-11-22 | 5.2 | `rewrite` pushed; the workflow passed on its first GitHub run (about 4 min). |
