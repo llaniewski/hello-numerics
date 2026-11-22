@@ -19,7 +19,7 @@ Everything is installed **in user space, without sudo**. The only possible excep
 - [x] **0.3 Pin R packages with `renv`** (decided). Run `renv::init()`, then install `knitr`, `rmarkdown`, `jsonlite`, `glue` and `testthat`, plus `Matrix` and `RTriangle` for later chapters. Use the Posit Package Manager repository, which provides precompiled Ubuntu binaries, so packages install quickly without needing system development libraries. Commit `renv.lock` so CI installs the same versions.
   - Done: dependencies are listed in `DESCRIPTION` (`Type: project`), and renv uses the `explicit` snapshot type, so `renv.lock` pins exactly those packages and their dependencies (61 packages, R 4.3.3).
   - `testthat` is under `Imports`, not `Suggests`, because renv skips `Suggests`.
-  - `Matrix` is pinned to **1.6-5** (the version bundled with R 4.3.3); current Matrix requires R ≥ 4.4.
+  - `Matrix` was first pinned to 1.6-5 for R 4.3.3; unpinned after the R 4.6.2 upgrade.
 - [x] **0.4 Set up Node tooling for PDF figure snapshots**: a `package.json` with `playwright` as a dev dependency, then `npx playwright install chromium`, which downloads into `~/.cache/ms-playwright`. If Chromium reports missing system libraries, `npx playwright install-deps` needs sudo; ask the author to run it. Node 18 works, but use Node 20 LTS in CI.
   - Done, with a change: Playwright 1.65 requires Node ≥ 20, so **Node 26.13.1 LTS** is installed in `~/opt/node-v26.13.1-linux-x64`. It is **not on `PATH`**, so the system Node 18 stays the default; for now use `export PATH=~/opt/node-v26.13.1-linux-x64/bin:$PATH`. `.node-version` says `26`, and CI uses the same version.
   - `playwright@1.65.1` is pinned exactly in `package.json`. Headless Chromium 159 is installed with no extra system libraries needed (no sudo).
@@ -122,8 +122,8 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 - [x] **Old prototypes**: move to `sandbox/` for local reference, git-ignored and never committed; the originals stay on the `legacy` branch.
 - [x] **Git**: commit to the `rewrite` branch. Commits are authored by Claude, and the message states the work was done under L Laniewski-Wollk's direction.
 - [ ] **quarto-live reactivity vs. own bridge**: the author decides after the demo in 2.8.
-- [ ] **R version**: native R 4.3.3 here (renv.lock) vs. R 4.6.0 in the browser (webR 0.6.0). Upgrade native R (needs sudo, via CRAN's Ubuntu apt repository), or accept the difference? See the Log.
-- [ ] **Node on `PATH`**: link Node 26 into `~/.local/bin` (it would then replace the system Node 18 in all your shells), or keep exporting `PATH` per session?
+- [x] **R version**: native R upgraded to **4.6.2** by the author (CRAN repository plus r2u). `Matrix` is unpinned (now 1.7-6), `renv.lock` records R 4.6.2, and `quarto check` passes.
+- [x] **Node on `PATH`**: use Node 26 globally (decided). The symlink `~/opt/node` → `~/opt/node-v26.13.1-linux-x64` is in place (for a future upgrade, only the symlink changes). The author added `export PATH="$HOME/opt/node/bin:$PATH"` to `~/.bashrc`.
 - [ ] **Hosting**: Netlify with the custom domain vs. GitHub Pages on `github.io`. The author decides later; this also settles `CNAME` and the cross-origin isolation headers.
 
 ## Log
@@ -132,3 +132,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 |---|---|---|
 | 2026-11-22 | — | Plan written; decisions on renv, sandbox, git and testing recorded |
 | 2026-11-22 | Phase 0 | Tools installed (Quarto 1.11.9, TinyTeX, renv, Node 26 + Playwright 1.65.1, quarto-live v0.2.0 / webR 0.6.0). Open: native R 4.3.3 vs. webR's R 4.6.0. Matrix pinned to 1.6-5 because of the old R. |
+| 2026-11-22 | Phase 0 follow-up | R 4.6.2 installed by the author; renv.lock refreshed (Matrix 1.7-6). Node 26 on `PATH` globally. |
