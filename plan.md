@@ -9,16 +9,26 @@ Record finished steps in the **Log** at the bottom, with date and commit.
 
 ## Phase 0: Installation and tooling
 
-Already on the dev machine: R 4.3.3, Node 18.19.1, Python 3. Quarto is **not** installed yet.
+Already on the dev machine: R 4.3.3, Node 18.19.1 (system), Python 3.
 Everything is installed **in user space, without sudo**. The only possible exception is a missing system library for Playwright's Chromium (see 0.4).
 
-- [ ] **0.1 Install the Quarto CLI** from the release tarball (`quarto-<ver>-linux-amd64.tar.gz`, https://quarto.org/docs/download/). Unpack it to `~/opt/quarto-<ver>` and symlink `bin/quarto` into `~/.local/bin`. Check with `quarto check`. Record the version used, and pin the same version in CI.
-- [ ] **0.2 Install a LaTeX engine for the PDF build**: `quarto install tinytex`, which installs into `~/.TinyTeX`. Missing LaTeX packages are installed automatically on the first PDF render.
-- [ ] **0.3 Pin R packages with `renv`** (decided). Run `renv::init()`, then install `knitr`, `rmarkdown`, `jsonlite`, `glue` and `testthat`, plus `Matrix` and `RTriangle` for later chapters. Use the Posit Package Manager repository, which provides precompiled Ubuntu binaries, so packages install quickly without needing system development libraries. Commit `renv.lock` so CI installs the same versions.
-- [ ] **0.4 Set up Node tooling for PDF figure snapshots**: a `package.json` with `playwright` as a dev dependency, then `npx playwright install chromium`, which downloads into `~/.cache/ms-playwright`. If Chromium reports missing system libraries, `npx playwright install-deps` needs sudo; ask the author to run it. Node 18 works, but use Node 20 LTS in CI.
-- [ ] **0.5 Add the quarto-live extension**: `quarto add r-wasm/quarto-live`. This commits it into `_extensions/`. Record the extension version and the webR version it loads.
-- [ ] **0.6 Write a short "Getting started" section in `README.md`** with the commands above and how to preview (`quarto preview`) and build.
-- [ ] **0.7 Update `CLAUDE.md`**: replace the MkDocs commands and conventions with the Quarto ones (repeat whenever the conventions change).
+- [x] **0.1 Install the Quarto CLI** from the release tarball (`quarto-<ver>-linux-amd64.tar.gz`, https://quarto.org/docs/download/). Unpack it to `~/opt/quarto-<ver>` and symlink `bin/quarto` into `~/.local/bin`. Check with `quarto check`. Record the version used, and pin the same version in CI.
+  - Done: Quarto **1.11.9** in `~/opt/quarto-1.11.9`, linked as `~/.local/bin/quarto`. `quarto check` passes (R and knitr found; Quarto also found the system Chromium).
+- [x] **0.2 Install a LaTeX engine for the PDF build**: `quarto install tinytex`, which installs into `~/.TinyTeX`. Missing LaTeX packages are installed automatically on the first PDF render.
+  - Done: TinyTeX v2026.11.
+- [x] **0.3 Pin R packages with `renv`** (decided). Run `renv::init()`, then install `knitr`, `rmarkdown`, `jsonlite`, `glue` and `testthat`, plus `Matrix` and `RTriangle` for later chapters. Use the Posit Package Manager repository, which provides precompiled Ubuntu binaries, so packages install quickly without needing system development libraries. Commit `renv.lock` so CI installs the same versions.
+  - Done: dependencies are listed in `DESCRIPTION` (`Type: project`), and renv uses the `explicit` snapshot type, so `renv.lock` pins exactly those packages and their dependencies (61 packages, R 4.3.3).
+  - `testthat` is under `Imports`, not `Suggests`, because renv skips `Suggests`.
+  - `Matrix` is pinned to **1.6-5** (the version bundled with R 4.3.3); current Matrix requires R ≥ 4.4.
+- [x] **0.4 Set up Node tooling for PDF figure snapshots**: a `package.json` with `playwright` as a dev dependency, then `npx playwright install chromium`, which downloads into `~/.cache/ms-playwright`. If Chromium reports missing system libraries, `npx playwright install-deps` needs sudo; ask the author to run it. Node 18 works, but use Node 20 LTS in CI.
+  - Done, with a change: Playwright 1.65 requires Node ≥ 20, so **Node 26.13.1 LTS** is installed in `~/opt/node-v26.13.1-linux-x64`. It is **not on `PATH`**, so the system Node 18 stays the default; for now use `export PATH=~/opt/node-v26.13.1-linux-x64/bin:$PATH`. `.node-version` says `26`, and CI uses the same version.
+  - `playwright@1.65.1` is pinned exactly in `package.json`. Headless Chromium 159 is installed with no extra system libraries needed (no sudo).
+  - Checked: headless Chromium renders the pencil `feTurbulence`/`feDisplacementMap` filter correctly at 3× scale.
+- [x] **0.5 Add the quarto-live extension**: `quarto add r-wasm/quarto-live`. This commits it into `_extensions/`. Record the extension version and the webR version it loads.
+  - Done: quarto-live **v0.2.0** (released 2026-05-22; its `_extension.yml` still says `0.1.3-dev`). It loads **webR v0.6.0**, which runs **R 4.6.0** in the browser. webR v0.6.1 (2026-11-10) exists and can be selected with the `engine-url` option, but keep the version quarto-live was released with unless there's a reason to change.
+- [x] **0.6 Write a short "Getting started" section in `README.md`** with the commands above and how to preview (`quarto preview`) and build.
+- [~] **0.7 Update `CLAUDE.md`**: replace the MkDocs commands and conventions with the Quarto ones (repeat whenever the conventions change). Tool locations and versions are added; the MkDocs → Quarto commands are replaced in Phase 1.
+- [x] **0.8 `.gitignore`**: `sandbox/`, Quarto output (`_book/`, `.quarto/`), PDF intermediates (`_figstate/`, `_figs/`), `node_modules/`.
 
 ## Phase 1: Move the project to Quarto
 
@@ -52,6 +62,7 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 
 - [ ] **2.1 Color palette**: `assets/css/pencil.css` defines the pen colors as CSS variables (`--hn-pen0` …) with light and dark variants. Dark mode is tied to Quarto's dark theme (the `.quarto-dark` body class), not Material variables. The same colors are used to highlight quantities in code and equations.
 - [ ] **2.2 SVG defs**: move the pencil-texture filters and arrow markers from `springs.md` into `assets/svg/defs.svg`. A JS helper `ensureDefs()` puts them on the page once, and figures reference them by id.
+  - Watch out: with the default `filterUnits="objectBoundingBox"`, a filter applied to a perfectly horizontal or vertical line has a zero-size region, and **the line disappears**. Apply filters to groups, or use `filterUnits="userSpaceOnUse"` (found while testing in 0.4).
 - [ ] **2.3 Figure kit** `lib/js/kit/`: drawing primitives as ES modules (stick figure "guy", spring, wall, node, force arrow, dimension line) and drag helpers (dragging along x/y only, snapping). Each figure exports `draw(svg, state)` and `interact(svg, state, onChange)`.
 - [ ] **2.4 webR bridge** `lib/js/bridge.js`:
   - Share the single webR instance that quarto-live creates; if quarto-live doesn't expose it, decide between that and running webR directly.
@@ -111,6 +122,8 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 - [x] **Old prototypes**: move to `sandbox/` for local reference, git-ignored and never committed; the originals stay on the `legacy` branch.
 - [x] **Git**: commit to the `rewrite` branch. Commits are authored by Claude, and the message states the work was done under L Laniewski-Wollk's direction.
 - [ ] **quarto-live reactivity vs. own bridge**: the author decides after the demo in 2.8.
+- [ ] **R version**: native R 4.3.3 here (renv.lock) vs. R 4.6.0 in the browser (webR 0.6.0). Upgrade native R (needs sudo, via CRAN's Ubuntu apt repository), or accept the difference? See the Log.
+- [ ] **Node on `PATH`**: link Node 26 into `~/.local/bin` (it would then replace the system Node 18 in all your shells), or keep exporting `PATH` per session?
 - [ ] **Hosting**: Netlify with the custom domain vs. GitHub Pages on `github.io`. The author decides later; this also settles `CNAME` and the cross-origin isolation headers.
 
 ## Log
@@ -118,3 +131,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 | Date | Step | Notes / commit |
 |---|---|---|
 | 2026-11-22 | — | Plan written; decisions on renv, sandbox, git and testing recorded |
+| 2026-11-22 | Phase 0 | Tools installed (Quarto 1.11.9, TinyTeX, renv, Node 26 + Playwright 1.65.1, quarto-live v0.2.0 / webR 0.6.0). Open: native R 4.3.3 vs. webR's R 4.6.0. Matrix pinned to 1.6-5 because of the old R. |

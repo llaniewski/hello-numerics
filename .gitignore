@@ -1,0 +1,20 @@
+# Old prototypes, kept locally for reference only (originals on the `legacy` branch)
+sandbox/
+
+# Quarto build output and caches
+/_book/
+/.quarto/
+*_cache/
+*_files/
+
+# PDF build intermediates
+/_figstate/
+/_figs/
+
+# Node
+node_modules/
+
+# R
+.Rhistory
+.RData
+.Rproj.user/

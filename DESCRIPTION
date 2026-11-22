@@ -1,0 +1,13 @@
+Type: project
+Title: Hello Numerics
+Description: R dependencies for building the Hello Numerics book (pinned by
+    renv in renv.lock; renv uses the "explicit" snapshot type, so only the
+    packages listed here and their dependencies are recorded).
+Imports:
+    knitr,
+    rmarkdown,
+    jsonlite,
+    glue,
+    Matrix,
+    RTriangle,
+    testthat

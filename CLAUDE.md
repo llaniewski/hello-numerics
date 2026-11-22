@@ -56,7 +56,15 @@ The move to Quarto + webR + quarto-live is tracked step by step in [plan.md](pla
 - Commits are authored by Claude (`--author="Claude <noreply@anthropic.com>"`). The commit message ends with a line stating the work was done under the author's direction: `Done under the direction of L Laniewski-Wollk.`
 - `sandbox/` holds old prototypes for local reference only. It is git-ignored; never commit it.
 
-## Commands
+## Tooling (new setup)
+
+- **Quarto 1.11.9** at `~/.local/bin/quarto`; TinyTeX for the PDF.
+- **R packages** via `renv`: dependencies are listed in `DESCRIPTION`, renv uses the `explicit` snapshot type, and `renv.lock` pins the versions. To add a package: add it to `DESCRIPTION`, run `renv::install()`, then `renv::snapshot()`. Local R is 4.3.3, so `Matrix` is pinned to 1.6-5.
+- **Node 26** at `~/opt/node-v26.13.1-linux-x64/bin`, which is *not* on `PATH` (the system Node is 18, too old for Playwright). Run Node tools with `export PATH=~/opt/node-v26.13.1-linux-x64/bin:$PATH` first. Playwright 1.65.1 (pinned) with headless Chromium.
+- **quarto-live v0.2.0** is committed in `_extensions/r-wasm/live`; it loads webR v0.6.0, which runs R 4.6.0 in the browser. Don't edit the extension's files; update it with `quarto add r-wasm/quarto-live@<tag>`.
+- Node scripts in the scratchpad must import Playwright by absolute path (`<repo>/node_modules/playwright/index.mjs`), because ES modules resolve packages relative to the script's location.
+
+## Commands (legacy MkDocs site, until Phase 1 is done)
 
 ```bash
 pip install mkdocs-material   # pulls in mkdocs and pymdown-extensions
