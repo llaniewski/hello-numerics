@@ -67,7 +67,7 @@ The move to Quarto + webR is tracked step by step in [plan.md](plan.md). Read it
 
 ```bash
 quarto preview                 # live-reload preview on localhost
-quarto render                  # build the HTML book into _book/
+quarto render                  # build the HTML book and the PDF into _book/ (scripts/build.sh checks Node first)
 Rscript -e 'renv::restore()'   # install the pinned R packages
 npm ci                         # install Playwright (then: npx playwright install chromium)
 Rscript -e 'testthat::test_dir("tests/testthat")'   # R helper tests
@@ -119,6 +119,7 @@ Screenshots for checking layout: a Playwright script against a local server, in 
   - Packages are found from `library()`/`require()`/`pkg::` in the code and installed in webR; only the scopes that need a package (and the scopes inside them) wait for it. `Matrix` costs about 3 s (download + load), so keep it in the scope that uses it, not in an outer one.
   - Every shown block has a **Full code** button: the code of all enclosing scopes (hidden blocks included) and its own, with current values. `tests/browser/live-figures.mjs` runs it in native R and compares with the browser.
   - Scopes are emitted as start/end marker divs, not wrapping divs, because Pandoc leaves headings inside divs out of the table of contents.
+  - **PDF**: the same filter evaluates every scope in native R (`lib/R/static.R`, one `Rscript` call per page, run in the project directory so renv applies), fills equations with `tex_fill()`, and draws figures with `scripts/snapshot-figures.mjs` (Playwright, PNG into `_figs/`). Shown code is as written; hidden blocks are dropped; sliders become a one-line note; each figure links to its interactive version (`site-url`). `pdf-states="x1=1.4 | x1=3"` gives one captioned figure per state. The filter reads a module's default `inputs`/`outputs` from its source text, so keep them as literal one-line arrays (`export const outputs = ["L0", "F"];`). Use `content-visible when-format="html"` for text about dragging.
 - In **inline** code, Quarto turns a leading `{{…}}` into `{…}` (its escape for inline executable code); write `` `{{{expr}}}` `` to show `{{expr}}`. Code blocks and math are not affected.
   - Pages import these with relative paths (`../lib/js/...`).
 - Use `engine: markdown` on pages without native R chunks (otherwise Quarto picks Jupyter). A page's own `filters` replace the book-wide list, so avoid page-level `filters`.

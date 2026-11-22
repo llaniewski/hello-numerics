@@ -5,9 +5,18 @@ engine: markdown
 
 The finite element method starts with something very simple: springs. A spring connects two points, and pulling on it takes a force proportional to how much it is stretched. Join several springs and the whole system can be written as one matrix equation, $K u = f$. This equation is the heart of the method: later, the "springs" will be pieces of a beam, a membrane or a solid body, but the matrix will be built the same way.
 
+::: {.content-visible when-format="html"}
 ::: {.callout-tip}
 ## How to use the figures
 Drag the handles (the pulsing circles) with the mouse or a finger. The R code under each figure is **exactly the code that runs** in your browser to compute what you see; the numbers that change light up briefly. The **Full code** button on a snippet gives everything needed to run it in your own R.
+:::
+:::
+
+::: {.content-visible unless-format="html"}
+::: {.callout-tip}
+## Interactive figures
+The figures in this chapter are interactive in the online version: you can drag the people and the springs, and the R code and equations update. Each figure below links to it.
+:::
 :::
 
 :::: {.live #springs}
@@ -30,7 +39,7 @@ $$ {#eq-hooke}
 
 Here $F$ is the force of the spring on the person, and $k$ says how stiff the spring is. Try it: stretch and compress the spring, and watch the sign of $F$.
 
-::: {.live figure="spring1"}
+::: {.live figure="spring1" pdf-states="x1=1.4 | x1=3"}
 ```r
 x1 <- 3
 F  <- -k * (x1 - L0)

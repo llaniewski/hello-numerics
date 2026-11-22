@@ -144,12 +144,14 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 
 ## Phase 4: PDF build
 
-- [ ] **4.1 PDF format** in `_quarto.yml`: book class, the shared macro preamble, code highlighting, and `downloads: [pdf]` so the website links to the PDF.
-- [ ] **4.2 Figure states**: R chunks write each figure's chosen state(s) to `_figstate/<figure>.json` during the render.
-- [ ] **4.3 `scripts/snapshot-figures.mjs`**: Playwright opens a minimal page, calls the figure's `draw(svg, state)` for each state, and saves the result as PDF/SVG to `_figs/`. Use a headless browser so the SVG filters render correctly.
-- [ ] **4.4 `scripts/build-pdf.sh`**: run the R state export, then the snapshots, then `quarto render --to pdf`. Make it idempotent and runnable locally.
-- [ ] **4.5 Choose the content per format** with `content-visible when-format=…`, wrapped in the shortcode from 2.7.
-- [ ] **4.6 Check** that the PDF renders, figures look right (including the pencil effect), and code, equations and figures show the same numbers.
+- [x] **4.1 PDF format** in `_quarto.yml`: book class, the shared macro preamble, code highlighting, and `downloads: [pdf]` so the website links to the PDF.
+  - Done: `scrreprt`, A4, `assets/tex/macros.tex` in the preamble, wrapped code. `quarto render` builds the site and the PDF together (about 20 s); the site's download button links to `Hello-Numerics.pdf`.
+- [x] **4.2 Figure states** (changed): no separate export step. For non-HTML formats, `filters/live.lua` evaluates every scope of the page in **native R** with one `Rscript` call (`lib/R/static.R`: same nesting of environments as in the browser), and fills the equations with `tex_fill()`. A book's PDF is one combined document; the filter follows Quarto's `quarto-file-metadata` markers to know each chapter's file, so ids and links match the HTML.
+- [x] **4.3 `scripts/snapshot-figures.mjs`**: Playwright draws each figure with its own `draw(svg, state, opts)` and `pencil.css`, saved as PNG (3×) to `_figs/`. Called by the filter once per page.
+  - PNG rather than vector PDF: the pencil filter is a raster effect anyway.
+- [x] **4.4 `scripts/build.sh`**: checks Node ≥ 20, then `quarto render` (extra arguments pass through, e.g. `--to pdf`).
+- [x] **4.5 Content per format**: the filter replaces figures with images plus a link to the interactive version, drops hidden blocks, and turns sliders into a one-line note. `pdf-states="x1=1.4 | x1=3"` draws one captioned figure per state. Page text that only makes sense online uses `content-visible when-format="html"` (example in `fem/springs.qmd`).
+- [x] **4.6 Check**: the PDF renders; figures keep the pencil look; code, equations and figures show the same numbers (all from native R). Checked by rendering the pages to images.
 
 ## Phase 5: GitHub Actions
 
@@ -193,3 +195,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 | 2026-11-22 | Phase 2 (2.4–2.8) | Author chose the own bridge; quarto-live removed. Bridge, live code with fading highlight, `tex.R` + live equations, `.live-figure` filter, R tests and browser check done. Fixed stale renv sandbox links left by the R upgrade. |
 | 2026-11-22 | 2.9 | Nested live scopes, sliders, hidden blocks and "Full code" (checked against native R). Highlight fade shortened to 1 s. |
 | 2026-11-22 | Phase 3 (3.1–3.3, 3.5) | `fem/springs.qmd` with five live figures, two sliders and example text; figures `people` and `chain`; figure modules get `opts`; packages only block the scopes that need them; "Full code" button moved under the code block. Waiting for the author's manual check (3.6). |
+| 2026-11-22 | Phase 4 | PDF build: native R evaluation of live scopes in the filter, Playwright figure snapshots, `pdf-states`, slider notes, links to interactive versions; `scripts/build.sh`; site links the PDF. |

@@ -22,6 +22,7 @@ book:
   favicon: assets/img/favicon.ico
   search: true
   page-navigation: true
+  downloads: [pdf]
   chapters:
     - index.qmd
     - math/index.qmd
@@ -57,3 +58,13 @@ format:
     code-tools: false
     toc: true
     number-sections: true
+  pdf:
+    documentclass: scrreprt
+    papersize: a4
+    toc: true
+    number-sections: true
+    colorlinks: true
+    include-in-header:
+      - file: assets/tex/macros.tex
+    code-block-bg: "#f3efe7"
+    code-overflow: wrap
