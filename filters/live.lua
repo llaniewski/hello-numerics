@@ -26,7 +26,8 @@
 --   ::::
 --
 -- - `figure`: a module in lib/js/figures/ (its inputs, outputs and colors can
---   be overridden with the attributes `inputs`, `outputs`, `colors="x1:pen1"`).
+--   be overridden with the attributes `inputs`, `outputs`, `colors="x1:pen1"`;
+--   other attributes are passed to the module as settings).
 -- - Every ```r / {.r} block in a scope belongs to it and runs, in page order.
 --   Write ```r (not ```{r}), so knitr doesn't run it. Add `.static` to a
 --   block to keep it out (shown, never run).
@@ -102,6 +103,14 @@ local function data_attrs(div, names)
   return attrs
 end
 
+-- All attributes as data-*: figure, inputs, outputs, colors, and settings
+-- for the figure module (passed to it as opts.data)
+local function all_data_attrs(div)
+  local attrs = {}
+  for name, value in pairs(div.attributes) do attrs["data-" .. name] = value end
+  return attrs
+end
+
 local function without(classes, class)
   return classes:filter(function(c) return c ~= class end)
 end
@@ -137,7 +146,7 @@ function Div(div)
   local classes = without(without(div.classes, "live"), "live-figure")
   classes:insert("hn-live")
   local blocks = pandoc.List({ pandoc.Div({}, pandoc.Attr(id, classes,
-    data_attrs(div, { "figure", "inputs", "outputs", "colors" }))) })
+    all_data_attrs(div))) })
   if div.attributes["figure"] then
     blocks:insert(pandoc.Div({}, pandoc.Attr(id .. "-figure", { "hn-live-figure" })))
   end

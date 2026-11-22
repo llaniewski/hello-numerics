@@ -27,7 +27,9 @@ book:
     - math/index.qmd
     - basics/index.qmd
     - fdm/index.qmd
-    - fem/index.qmd
+    - part: fem/index.qmd
+      chapters:
+        - fem/springs.qmd
     - fvm/index.qmd
     - lbm/index.qmd
     # Temporary: development demos (removed once real chapters show the same)

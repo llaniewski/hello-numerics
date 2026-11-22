@@ -130,12 +130,17 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 
 ## Phase 3: Springs showcase (`fem/springs.qmd`)
 
-- [ ] **3.1 Text**: Hooke's law, force balance at both ends, the 2×2 stiffness matrix, then assembly for a chain of springs. Math rendered with KaTeX.
-- [ ] **3.2 Single-spring figure with live values**: dragging the end node updates the R snippet (live literals), the equation `K u = F` (slots `{{K}}`, `{{u}}`, `{{F}}`) and the force arrows. Colors match across figure, code and equation.
-- [ ] **3.3 Chain of springs figure**: R assembles `K` and solves it; the figure shows displacements and reaction forces. Plain "snippet + figure" (no live literals).
+- [x] **3.1 Text**: Hooke's law, force balance at both ends, the 2×2 stiffness matrix, then assembly for a chain of springs. Math rendered with KaTeX.
+  - Done: `fem/springs.qmd` (FEM is now a book part with this page as its first chapter). Sections: Hooke's law, two ends (element matrix, singular $K_e$), assembly (`assemble()` shown in the page scope), solving with fixed and free points, very many springs (sparse `Matrix`), changing the springs everywhere (sliders for `k` and `L0`), exercises. Example text for the author to rewrite.
+  - Ingredients shown: page-wide scope, static numbered equations with cross-references (`@eq-…`, `@sec-…`), callouts (tip, collapsible note, exercises), a `.static` code block, a hidden `library(Matrix)` block, expression slots (`{{K[free, free]}}`, `{{nnzero(K)}}`), two sliders.
+- [x] **3.2 Single-spring figure with live values**: dragging the end node updates the R snippet (live literals), the equation `K u = F` (slots `{{K}}`, `{{u}}`, `{{F}}`) and the force arrows. Colors match across figure, code and equation.
+  - Done with the new `people` figure (two people, both draggable: `f = K_e u` live), after the one-spring `spring1` figure.
+- [x] **3.3 Chain of springs figure**: R assembles `K` and solves it; the figure shows displacements and reaction forces. Plain "snippet + figure" (no live literals).
+  - Done: `people` with three people (assembly) and the new `chain` figure (wall, knots, person; R solves for the knots; spring thickness shows stiffness). Went further than planned: live literals and equations everywhere.
 - [ ] **3.4 PDF version**: two or three fixed states shown side by side, plus a link to the live page.
-- [ ] **3.5 Automated checks (Claude)**: Playwright script against `quarto preview` that loads the page, waits for webR, simulates drags, and checks that the code, equation and figure all show the same values as R. It records timings: webR load, evaluation time per drag, skipped states. Also screenshots in light/dark mode and at phone width.
-- [ ] **3.6 Manual check (author)**: Claude runs `quarto preview` in the background (live reload at `http://localhost:<port>`); the author drags with a real mouse (and a touchscreen, if available), with `?debug` on for timings. The author's feedback goes to the Log below and turns into fixes. Repeat until dragging feels right.
+- [x] **3.5 Automated checks (Claude)**: Playwright script against `quarto preview` that loads the page, waits for webR, simulates drags, and checks that the code, equation and figure all show the same values as R. It records timings: webR load, evaluation time per drag, skipped states. Also screenshots in light/dark mode and at phone width.
+  - Done: `tests/browser/live-figures.mjs fem/springs.html` (drags all five figures, moves both sliders, compares every figure's full code run in native R with the browser). Headless desktop: webR ready in 1.5 s, 5–9 ms per R run. Screenshots at desktop and phone width, light and dark, checked by Claude.
+- [~] **3.6 Manual check (author)**: Claude runs `quarto preview` in the background (live reload at `http://localhost:<port>`); the author drags with a real mouse (and a touchscreen, if available), with `?debug` on for timings. The author's feedback goes to the Log below and turns into fixes. Repeat until dragging feels right.
 
 ## Phase 4: PDF build
 
@@ -187,3 +192,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 | 2026-11-22 | Phase 2 (2.1–2.3, 2.8) | Palette, SVG defs, D3 kit and first figure done. Demos A (quarto-live) and B (own bridge) built and measured; decision pending. Found: only book chapters belong to a Quarto book project, so demos are a temporary book part. |
 | 2026-11-22 | Phase 2 (2.4–2.8) | Author chose the own bridge; quarto-live removed. Bridge, live code with fading highlight, `tex.R` + live equations, `.live-figure` filter, R tests and browser check done. Fixed stale renv sandbox links left by the R upgrade. |
 | 2026-11-22 | 2.9 | Nested live scopes, sliders, hidden blocks and "Full code" (checked against native R). Highlight fade shortened to 1 s. |
+| 2026-11-22 | Phase 3 (3.1–3.3, 3.5) | `fem/springs.qmd` with five live figures, two sliders and example text; figures `people` and `chain`; figure modules get `opts`; packages only block the scopes that need them; "Full code" button moved under the code block. Waiting for the author's manual check (3.6). |

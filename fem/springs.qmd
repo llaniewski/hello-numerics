@@ -1,0 +1,217 @@
+---
+title: "Springs"
+engine: markdown
+---
+
+The finite element method starts with something very simple: springs. A spring connects two points, and pulling on it takes a force proportional to how much it is stretched. Join several springs and the whole system can be written as one matrix equation, $K u = f$. This equation is the heart of the method: later, the "springs" will be pieces of a beam, a membrane or a solid body, but the matrix will be built the same way.
+
+::: {.callout-tip}
+## How to use the figures
+Drag the handles (the pulsing circles) with the mouse or a finger. The R code under each figure is **exactly the code that runs** in your browser to compute what you see; the numbers that change light up briefly. The **Full code** button on a snippet gives everything needed to run it in your own R.
+:::
+
+:::: {.live #springs}
+All springs on this page share the same two properties:
+
+```r
+k  <- 2     # spring constant [N/m]
+L0 <- 2     # rest length [m]
+```
+
+At the end of the page you can change them, and see every example update.
+
+## One spring: Hooke's law {#sec-hooke}
+
+One end of a spring is attached to a wall at $x = 0$, the other is held by a person at $x_1$. When the spring is stretched beyond its rest length $L_0$, it pulls the person back towards the wall; when it is compressed, it pushes them away:
+
+$$
+F = -k\,(x_1 - L_0)
+$$ {#eq-hooke}
+
+Here $F$ is the force of the spring on the person, and $k$ says how stiff the spring is. Try it: stretch and compress the spring, and watch the sign of $F$.
+
+::: {.live figure="spring1"}
+```r
+x1 <- 3
+F  <- -k * (x1 - L0)
+```
+
+$$
+F = -k\,(x_1 - L_0) = -{{k}}\,({{x1}} - {{L0}}) = {{F}}\ \mathrm{N}
+$$
+:::
+
+To keep the spring stretched, the person has to pull with the opposite force, $-F$. From now on we look at it this way: the forces that people **apply** to the springs.
+
+## Two ends, two forces {#sec-two-ends}
+
+Now nobody is a wall: two people hold the two ends of the spring. We describe where they are by their **displacements** $u_1$ and $u_2$, measured from the positions they would have if the spring were at rest. The spring is stretched by $u_2 - u_1$, so the forces the two people have to apply are
+$$
+f_1 = k\,(u_1 - u_2), \qquad f_2 = k\,(u_2 - u_1),
+$$
+or, as one matrix equation,
+
+$$
+\begin{bmatrix} f_1 \\ f_2 \end{bmatrix}
+= \underbrace{k \begin{bmatrix} 1 & -1 \\ -1 & 1 \end{bmatrix}}_{K_e}
+\begin{bmatrix} u_1 \\ u_2 \end{bmatrix}.
+$$ {#eq-element}
+
+$K_e$ is the **stiffness matrix** of one spring, or of one *element*.
+
+::: {.live figure="people" inputs="x1 x2"}
+```r
+x1 <- 0.5
+x2 <- 3
+X  <- c(0, L0)                 # rest positions of the two ends
+u  <- c(x1, x2) - X            # displacements
+Ke <- k * matrix(c(1, -1, -1, 1), 2, 2)
+f  <- Ke %*% u                 # forces the two people apply
+```
+
+$$
+\mat{ {{f}} } = {{k}} \mat{1 & -1 \\ -1 & 1} \mat{ {{u}} }
+$$
+:::
+
+The two forces are always equal and opposite. Try moving both people the same way: if the spring keeps its length, no force is needed at all. In matrix terms, $K_e$ is **singular**: $K_e \mat{1 \\ 1} = 0$, so the displacements can't be found from the forces alone. We will come back to this.
+
+## Many springs: assembly {#sec-assembly}
+
+With more springs, each spring adds its $2 \times 2$ matrix $K_e$ into a big matrix $K$, at the rows and columns of the two points it joins. This is called **assembly**, and it is the same in every finite element program:
+
+```r
+element_matrix <- function(k) k * matrix(c(1, -1, -1, 1), 2, 2)
+
+# Stiffness matrix of n points joined by springs.
+# springs: one row per spring, with the two points it joins.
+assemble <- function(n, springs, k) {
+  k <- rep_len(k, nrow(springs))         # one constant per spring
+  K <- matrix(0, n, n)
+  for (e in seq_len(nrow(springs))) {
+    i <- springs[e, ]                    # the two points of spring e
+    K[i, i] <- K[i, i] + element_matrix(k[e])
+  }
+  K
+}
+```
+
+Three people, two springs: the person in the middle holds two springs, so the middle of $K$ gets contributions from both.
+
+::: {.live figure="people" inputs="x1 x2 x3"}
+```r
+x1 <- 0
+x2 <- 2.5
+x3 <- 4.2
+X  <- c(0, L0, 2 * L0)
+u  <- c(x1, x2, x3) - X
+springs <- rbind(c(1, 2),        # spring 1 joins people 1 and 2
+                 c(2, 3))        # spring 2 joins people 2 and 3
+K  <- assemble(3, springs, k)
+f  <- K %*% u
+```
+
+$$
+\mat{ {{f}} } = \mat{ {{K}} } \mat{ {{u}} }
+$$
+:::
+
+The middle row says that the middle person feels the *difference* of the two springs' pulls. Put them where both springs are stretched equally, and they don't need to do anything: $f_2 = 0$.
+
+## Solving: where do the knots settle? {#sec-solving}
+
+So far we chose the positions and computed the forces. The finite element method mostly works the other way round: some displacements are known (a wall, a support), the forces are known everywhere else, and we look for the rest.
+
+Below, three springs of different stiffness are tied together with knots. The left end is attached to the wall ($u = 0$), and the person holds the right end at $x_e$. Nobody touches the knots, so the forces there are zero. Split the points into **fixed** ones (wall and person) and **free** ones (knots), and the rows of $K u = f$ for the free points give
+$$
+K_{\text{free},\text{free}}\; u_\text{free} = -K_{\text{free},\text{fixed}}\; u_\text{fixed}.
+$$ {#eq-reduced}
+
+::: {.live figure="chain" outputs="x f X ks" length="8"}
+```r
+xe <- 7                          # the person's position [m]
+ks <- k * c(1, 3, 1.5)           # three springs, different stiffness
+n  <- length(ks) + 1             # points: wall, two knots, person
+K  <- assemble(n, cbind(1:(n - 1), 2:n), ks)
+X  <- L0 * (0:(n - 1))           # rest positions
+fixed <- c(1, n)                 # the wall and the person
+free  <- 2:(n - 1)               # the knots
+u <- numeric(n)
+u[n] <- xe - X[n]
+u[free] <- solve(K[free, free], -K[free, fixed] %*% u[fixed])
+x <- X + u                       # where everything is
+f <- K %*% u                     # forces: the wall's and the person's
+```
+
+$$
+\mat{ {{K[free, free]}} } \mat{ {{u[free]}} } = \mat{ {{-K[free, fixed] %*% u[fixed]}} }
+$$
+:::
+
+The stiff spring in the middle (drawn thicker) stretches the least. The force of the wall and the force of the person are equal and opposite, as they must be, since nothing else holds the chain.
+
+::: {.callout-note collapse="true"}
+## Why not just `solve(K, f)`?
+$K$ is singular, like $K_e$ in @sec-two-ends: you can shift the whole chain without changing any force. Fixing some displacements removes that freedom. In R you can check it with plain code (not run on this page):
+
+```{.r .static}
+det(element_matrix(2))                    # 0
+qr(assemble(3, rbind(1:2, 2:3), 2))$rank  # 2, not 3
+```
+:::
+
+## Very many springs {#sec-sparse}
+
+A real finite element model has thousands or millions of points, and most entries of $K$ are zero: each point is joined only to its neighbours. Such **sparse** matrices are stored and solved with the `Matrix` package. Here the chain is cut into 30 short springs. A spring a tenth as long is ten times stiffer (each of its coils stretches the same), so the chain as a whole is about as stiff as the three springs above. The stiffness also varies along the chain; watch where the knots spread apart:
+
+::: {.live figure="chain" outputs="x f X ks" length="8"}
+```{.r .hidden}
+library(Matrix)
+```
+
+```r
+xe <- 7
+m  <- 30                                   # number of springs
+ks <- k * m / 3 * (1.5 + sin(seq_len(m) / 3))  # short springs are stiffer
+n  <- m + 1
+K  <- sparseMatrix(i = c(1:m, 2:n, 1:m, 2:n),
+                   j = c(1:m, 2:n, 2:n, 1:m),
+                   x = c(ks, ks, -ks, -ks))  # repeated entries are added up
+X  <- seq(0, 3 * L0, length.out = n)
+fixed <- c(1, n)
+free  <- 2:(n - 1)
+u <- numeric(n)
+u[n] <- xe - X[n]
+u[free] <- as.vector(solve(K[free, free], -K[free, fixed] %*% u[fixed]))
+x <- X + u
+f <- as.vector(K %*% u)
+```
+
+$$
+\text{nonzero entries of } K:\ {{nnzero(K)}} \text{ out of } {{n^2}}
+$$
+:::
+
+Instead of a loop, the matrix is built from a list of entries (row, column, value), one $2 \times 2$ block per spring. The `library(Matrix)` call is in a hidden block; the **Full code** button shows it.
+
+## Changing the springs everywhere {#sec-change}
+
+Every example on this page took `k` and `L0` from the code at the top. Now we can check what happens when we change the springs everywhere:
+
+::: {.live-slider input="k" min="0.5" max="5" step="0.1" color="pen2"}
+Spring constant $k$ [N/m]
+:::
+
+::: {.live-slider input="L0" min="1" max="3" step="0.1" color="pen2"}
+Rest length $L_0$ [m]
+:::
+
+With a stiffer spring, all forces grow in proportion. But the knots in the chains don't move at all: in @eq-reduced, multiplying every spring constant by the same number multiplies both sides, so only the *ratios* of stiffnesses matter for where the knots settle.
+::::
+
+::: {.callout-caution icon="false"}
+## Exercises
+1. In @sec-two-ends, place the two people so that both forces are 1 N. How many such placements are there?
+2. In @sec-solving, which spring stretches most, and why? Change `ks` in the full code to make all three springs equal, and check that the knots are then evenly spaced.
+3. Add a fourth spring to the chain in your own R, using the full code as a start.
+:::
