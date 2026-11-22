@@ -1,0 +1,49 @@
+project:
+  type: book
+  output-dir: _book
+  render:
+    - "*.qmd"
+    - "!sandbox/"
+    - "!renv/"
+    - "!node_modules/"
+  resources:
+    - assets/img/
+
+book:
+  title: "Hello Numerics"
+  subtitle: "Numerics for the people"
+  author: "Lukasz Laniewski-Wollk"
+  description: "An open-source, interactive book on numerical methods for engineering."
+  site-url: https://www.hello-numerics.com/
+  repo-url: https://github.com/llaniewski/hello-numerics
+  repo-branch: master
+  repo-actions: [edit, issue]
+  favicon: assets/img/favicon.ico
+  search: true
+  page-navigation: true
+  chapters:
+    - index.qmd
+    - math/index.qmd
+    - basics/index.qmd
+    - fdm/index.qmd
+    - fem/index.qmd
+    - fvm/index.qmd
+    - lbm/index.qmd
+
+filters:
+  - filters/macros.lua
+
+format:
+  html:
+    theme:
+      light: [cosmo, assets/css/theme-light.scss]
+      dark: [darkly, assets/css/theme-dark.scss]
+    css: assets/css/paper.css
+    html-math-method:
+      method: katex
+      url: "https://cdn.jsdelivr.net/npm/katex@0.19.1/dist/"
+    include-after-body: assets/js/katex-setup.html
+    code-copy: true
+    code-tools: false
+    toc: true
+    number-sections: true

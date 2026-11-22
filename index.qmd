@@ -1,0 +1,30 @@
+# Preface {.unnumbered}
+
+This is an open-source book about numerical methods, aiming to provide a comprehensive introduction to the numerical methods used in engineering.
+
+The book starts with the mathematics needed later, then goes through numerical methods for solving problems (mainly iterative methods), and then explains the finite difference, finite element and finite volume methods, and possibly the lattice Boltzmann method.
+
+Figures in this book are interactive: you can move, push and draw their elements. Each figure comes with the code that computes it, and that code is exactly what runs in your browser.
+
+::: {.panel-tabset}
+## Math
+$$
+v = \mat{1 \\ 2 \\ 3}
+$$
+
+## R
+```r
+v <- c(1.0, 2.0, 3.0)
+```
+
+## Python
+```python
+import numpy as np
+v = np.array([1.0, 2.0, 3.0])
+```
+
+## C++
+```cpp
+std::vector<double> v = {1.0, 2.0, 3.0};
+```
+:::

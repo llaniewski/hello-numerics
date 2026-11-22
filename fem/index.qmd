@@ -1,0 +1,5 @@
+# Finite Element Method {#sec-fem}
+
+::: {.callout-note}
+This chapter is still to be written. It will start from systems of springs and the stiffness matrix.
+:::

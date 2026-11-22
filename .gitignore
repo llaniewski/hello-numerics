@@ -18,3 +18,5 @@ node_modules/
 .Rhistory
 .RData
 .Rproj.user/
+
+**/*.quarto_ipynb

@@ -45,4 +45,11 @@ npx playwright install chromium
 
 The quarto-live extension (in-browser R via webR) is committed in `_extensions/`, so it needs no installation.
 
+### Building
+
+```bash
+quarto preview   # live-reload preview in the browser
+quarto render    # build the book into _book/
+```
+
 R dependencies are listed in `DESCRIPTION`. After adding one there, install it with `renv::install()` and record it with `renv::snapshot()`.

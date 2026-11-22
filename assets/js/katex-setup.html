@@ -1,0 +1,33 @@
+<script>
+// Runs after KaTeX has loaded (in the page head) but before the page's own
+// math rendering (on DOMContentLoaded). Every katex.render call on the page,
+// including Quarto's later typesetting, gets:
+//  - the shared macros from assets/tex/macros.tex (embedded by filters/macros.lua),
+//  - trust for \htmlClass (used to highlight changing values in live equations).
+(function () {
+  if (!window.katex || window.katex.__hnWrapped) return;
+  const katex = window.katex;
+  const render = katex.render.bind(katex);
+  const renderToString = katex.renderToString.bind(katex);
+
+  // \newcommand definitions become page-wide with globalGroup; \gdef inside
+  // an equation also persists across equations on the same page.
+  const macros = {};
+  const src = document.getElementById('hn-katex-macros');
+  if (src) {
+    try {
+      renderToString(src.textContent, { macros, globalGroup: true, throwOnError: true });
+    } catch (e) {
+      console.error('KaTeX macros (assets/tex/macros.tex) failed:', e);
+    }
+  }
+
+  const trust = (ctx) => ctx.command === '\\htmlClass';
+  const withDefaults = (opts) => Object.assign({ throwOnError: false }, opts, { macros, trust });
+
+  katex.render = (tex, el, opts) => render(tex, el, withDefaults(opts));
+  katex.renderToString = (tex, opts) => renderToString(tex, withDefaults(opts));
+  katex.hnMacros = macros;
+  katex.__hnWrapped = true;
+})();
+</script>

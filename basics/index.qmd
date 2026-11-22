@@ -1,0 +1,5 @@
+# Solving problems numerically {#sec-basics}
+
+::: {.callout-note}
+This chapter is still to be written. It will cover numerical methods for solving problems, mainly iterative methods.
+:::

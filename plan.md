@@ -27,7 +27,7 @@ Everything is installed **in user space, without sudo**. The only possible excep
 - [x] **0.5 Add the quarto-live extension**: `quarto add r-wasm/quarto-live`. This commits it into `_extensions/`. Record the extension version and the webR version it loads.
   - Done: quarto-live **v0.2.0** (released 2026-05-22; its `_extension.yml` still says `0.1.3-dev`). It loads **webR v0.6.0**, which runs **R 4.6.0** in the browser. webR v0.6.1 (2026-11-10) exists and can be selected with the `engine-url` option, but keep the version quarto-live was released with unless there's a reason to change.
 - [x] **0.6 Write a short "Getting started" section in `README.md`** with the commands above and how to preview (`quarto preview`) and build.
-- [~] **0.7 Update `CLAUDE.md`**: replace the MkDocs commands and conventions with the Quarto ones (repeat whenever the conventions change). Tool locations and versions are added; the MkDocs → Quarto commands are replaced in Phase 1.
+- [x] **0.7 Update `CLAUDE.md`**: replace the MkDocs commands and conventions with the Quarto ones (repeat whenever the conventions change). Done in Phase 1.
 - [x] **0.8 `.gitignore`**: `sandbox/`, Quarto output (`_book/`, `.quarto/`), PDF intermediates (`_figstate/`, `_figs/`), `node_modules/`.
 
 ## Phase 1: Move the project to Quarto
@@ -49,14 +49,22 @@ sandbox/               old prototypes, not rendered, git-ignored
 
 The old MkDocs version is kept on the `legacy` branch (pushed to origin). This work happens on the `rewrite` branch.
 
-- [ ] **1.1 Create `_quarto.yml`** with `project: type: book`: title, author, `site-url` (https://www.hello-numerics.com/), repo link, an "edit this page" link, chapters in the order from CLAUDE.md, and the output directory `_book/`.
-- [ ] **1.2 HTML format**: `html-math-method: katex`, a light/dark theme pair, code copy buttons, the favicon, and the paper background (`craft.png`) through a custom SCSS/CSS file.
-- [ ] **1.3 KaTeX macros**: define `\mat` and other shared macros once, in a KaTeX config include for HTML and a LaTeX preamble include for PDF, so both formats understand the same macros. Remove the per-page `\newcommand`s.
-- [ ] **1.4 Convert pages from `.md` to `.qmd`**: `index`, `math`, `basics`, `fdm`, `fem`, `fvm`, `lbm` (mostly placeholders). Convert the tabbed code samples in `index.md` to Quarto `::: {.panel-tabset}`.
-- [ ] **1.5 Move the prototypes** (`basics/*.html`, `test.md`, `test2.md`, `lit.md`, `rpdf.html`, `test.R`) to `sandbox/` for local reference. Add `sandbox/` to `.gitignore` and exclude it from rendering. In git they are deleted on `rewrite`; the originals stay on `legacy`.
-- [ ] **1.6 Webr package image**: decide whether the custom `vfs/` library image is still needed. quarto-live can install packages from repo.r-wasm.org. If it is needed, move it to `assets/vfs/` and document how it is rebuilt.
-- [ ] **1.7 Check that `quarto render` (HTML) works locally** and the site looks right in light and dark mode.
-- [ ] **1.8 Remove `mkdocs.yml` and the old `docs/` tree** once nothing still needs them. Keep the `CNAME` for the custom domain, if one is used.
+- [x] **1.1 Create `_quarto.yml`** with `project: type: book`: title, author, `site-url` (https://www.hello-numerics.com/), repo link, an "edit this page" link, chapters in the order from CLAUDE.md, and the output directory `_book/`.
+  - Done. Only `.qmd` files are rendered (`sandbox/`, `renv/`, `node_modules/` excluded). Chapters: Preface, Mathematical background, Solving problems numerically, FDM, FEM, FVM, LBM. "Edit this page" points to `master`, so it only works after merging.
+- [x] **1.2 HTML format**: `html-math-method: katex`, a light/dark theme pair, code copy buttons, the favicon, and the paper background (`craft.png`) through a custom SCSS/CSS file.
+  - Done. Bootswatch `cosmo`/`darkly` plus `assets/css/theme-{light,dark}.scss` (Roboto fonts, teal links). `assets/css/paper.css`: the content column is a kraft-paper card on wide screens and the whole page is paper on narrow ones; dark mode darkens the paper with `background-blend-mode: multiply`. Checked with screenshots: light/dark × desktop/phone, no console errors.
+- [x] **1.3 KaTeX macros**: define `\mat` and other shared macros once, in a KaTeX config include for HTML and a LaTeX preamble include for PDF, so both formats understand the same macros. Remove the per-page `\newcommand`s.
+  - Done for HTML: KaTeX pinned to **0.19.1** (Quarto would load `katex@latest`). Macros live only in `assets/tex/macros.tex`. `filters/macros.lua` embeds the file in each page, and `assets/js/katex-setup.html` wraps `katex.render` so every render (including Quarto's later typesetting) gets the macros and `trust` for `\htmlClass`. Checked: `\mat` renders. The PDF part is in Phase 4.
+- [x] **1.4 Convert pages from `.md` to `.qmd`**: `index`, `math`, `basics`, `fdm`, `fem`, `fvm`, `lbm` (mostly placeholders). Convert the tabbed code samples in `index.md` to Quarto `::: {.panel-tabset}`.
+  - Done: `index.qmd` (with `panel-tabset`) and placeholder chapters with a short note on what each will cover. The old springs page isn't converted here; it is rebuilt in Phase 3.
+- [x] **1.5 Move the prototypes** (`basics/*.html`, `test.md`, `test2.md`, `lit.md`, `rpdf.html`, `test.R`) to `sandbox/` for local reference. Add `sandbox/` to `.gitignore` and exclude it from rendering. In git they are deleted on `rewrite`; the originals stay on `legacy`.
+  - Done: the whole old `docs/` tree and `mkdocs.yml` are in `sandbox/legacy-docs/`, and `test.R` is in `sandbox/`.
+- [x] **1.6 Webr package image**: decide whether the custom `vfs/` library image is still needed. quarto-live can install packages from repo.r-wasm.org. If it is needed, move it to `assets/vfs/` and document how it is rebuilt.
+  - Done, **dropped**: repo.r-wasm.org has `Matrix` 1.7-6 and `RTriangle` 1.6-0.15, the same versions as `renv.lock`, so webR installs them directly and browser and native R use identical package versions.
+- [x] **1.7 Check that `quarto render` (HTML) works locally** and the site looks right in light and dark mode.
+  - Done: renders without warnings.
+- [x] **1.8 Remove `mkdocs.yml` and the old `docs/` tree** once nothing still needs them. Keep the `CNAME` for the custom domain, if one is used.
+  - Done: `docs/` and `mkdocs.yml` removed; `craft.png` and `favicon.ico` moved to `assets/img/`. `CNAME` waits for the hosting decision.
 
 ## Phase 2: Shared libraries and assets
 
@@ -71,6 +79,7 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
   - A debug overlay, turned on with `?debug` in the URL, showing webR load time, the R evaluation time per update (last/average/max), and how many intermediate drag states were skipped. This gives concrete numbers when judging responsiveness by hand.
 - [ ] **2.5 Live code**: rewrite the input literals in the shown snippet (`x1 <- 1.35`), finding them with R's `getParseData()`, and run exactly the displayed text. Color the inputs and highlight values that just changed.
 - [ ] **2.6 Live equations** `lib/js/livetex.js` + `lib/R/tex.R`: fill `{{expr}}` slots (with an optional digits setting such as `{{x|3}}`) using `tex_body()` evaluated in R, and render with KaTeX (with `trust` on, for `\htmlClass`). Use the same `tex_body()` in native R for the PDF.
+  - Note: Quarto loads KaTeX only on pages that contain static math, so a page with only live equations must make sure KaTeX is loaded.
 - [ ] **2.7 Authoring interface**: one Quarto shortcode or filter (e.g. `{{< live-figure springs >}}`) that ties together the figure module, the snippet chunk and the equation templates, and outputs the right content for HTML or PDF.
 - [ ] **2.8 First evaluate quarto-live's own reactivity** (OJS `input`/`define` options on webR cells) on a small example. **Author decides after this step.** Prepare:
   - a demo page in `sandbox/` with a draggable point feeding a quarto-live webR cell, showing what it can and can't do (live literals in code? redrawing equations? latency?);
@@ -133,3 +142,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 | 2026-11-22 | — | Plan written; decisions on renv, sandbox, git and testing recorded |
 | 2026-11-22 | Phase 0 | Tools installed (Quarto 1.11.9, TinyTeX, renv, Node 26 + Playwright 1.65.1, quarto-live v0.2.0 / webR 0.6.0). Open: native R 4.3.3 vs. webR's R 4.6.0. Matrix pinned to 1.6-5 because of the old R. |
 | 2026-11-22 | Phase 0 follow-up | R 4.6.2 installed by the author; renv.lock refreshed (Matrix 1.7-6). Node 26 on `PATH` globally. |
+| 2026-11-22 | Phase 1 | Quarto book in place: config, themes, kraft paper, KaTeX 0.19.1 with shared macros, placeholder chapters. MkDocs tree removed (copy in `sandbox/`). Custom webR package image dropped. Remote preview over Tailscale tested with the author's phone. |

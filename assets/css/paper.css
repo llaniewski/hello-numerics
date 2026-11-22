@@ -1,0 +1,44 @@
+/* Kraft-paper page, as in the old site: on wide screens the content column is
+   a paper card with a shadow; on narrow screens the whole page is paper.
+   Dark mode darkens the same texture by blending it with a dark color. */
+
+:root {
+  --hn-paper-tint: transparent;
+  --hn-paper-shadow: rgba(0, 0, 0, 0.18);
+}
+body.quarto-dark {
+  --hn-paper-tint: #2a2520;
+  --hn-paper-shadow: rgba(0, 0, 0, 0.6);
+}
+
+/* Narrow screens: the whole page is paper */
+@media (max-width: 991.98px) {
+  body {
+    background-image: url("../img/craft.png");
+    background-repeat: repeat;
+    background-color: var(--hn-paper-tint);
+    background-blend-mode: multiply;
+  }
+}
+
+/* Wide screens: the main content column is a paper card */
+@media (min-width: 992px) {
+  main.content {
+    background-image: url("../img/craft.png");
+    background-repeat: repeat;
+    background-color: var(--hn-paper-tint);
+    background-blend-mode: multiply;
+    box-shadow: 5px 5px 15px var(--hn-paper-shadow);
+    padding: 1.5rem 2rem 2rem;
+    border-radius: 2px;
+  }
+}
+
+/* Code blocks and callouts: slightly translucent so the paper shows through */
+div.sourceCode, .callout {
+  background-color: rgba(255, 255, 255, 0.35);
+}
+body.quarto-dark div.sourceCode,
+body.quarto-dark .callout {
+  background-color: rgba(0, 0, 0, 0.3);
+}

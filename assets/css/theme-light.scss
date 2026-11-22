@@ -1,0 +1,11 @@
+/*-- scss:defaults --*/
+// Light theme on top of Bootswatch "cosmo". Fonts as in the old site.
+$font-family-sans-serif: "Roboto", system-ui, -apple-system, "Segoe UI", sans-serif;
+$font-family-monospace: "Roboto Mono", SFMono-Regular, Menlo, monospace;
+$body-bg: #f3efe7;
+$body-color: #2b2622;
+$link-color: #1f7a72;     // teal accent, as in the old site
+$code-color: #8a2433;
+
+/*-- scss:rules --*/
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,400;0,500;0,700;1,400&family=Roboto+Mono&display=swap");

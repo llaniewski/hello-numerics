@@ -1,0 +1,5 @@
+# Mathematical background {#sec-math}
+
+::: {.callout-note}
+This chapter is still to be written. It will cover only the linear algebra and calculus needed in the later chapters.
+:::

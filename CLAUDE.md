@@ -4,18 +4,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-"Hello Numerics" is an open-source, interactive book on numerical methods for engineering. It's currently built as a static site with **MkDocs + Material theme** (`mkdocs.yml`, content in `docs/`) and published at https://www.hello-numerics.com/. There is no application code, test suite, or linter; the "code" is interactive JavaScript embedded in Markdown pages.
+"Hello Numerics" is an open-source, interactive book on numerical methods for engineering. It's a **Quarto book** (`_quarto.yml`), with in-browser R through **webR** and the **quarto-live** extension, published at https://www.hello-numerics.com/ (hosting not decided yet: Netlify or GitHub Pages).
 
-The project is at an **early, exploratory stage**. Most pages are placeholders or prototypes, and the toolchain (MkDocs, R vs Python) isn't settled yet.
+The project is at an **early stage**: the chapters are placeholders, and the interactive-figure machinery is still being built. The old MkDocs version is on the `legacy` branch.
 
 ### Planned content (in reading order)
 
-1. **Math background**: only the linear algebra and calculus needed later (`docs/math/`).
-2. **Numerical methods for solving problems**: mainly iterative methods (`docs/basics/`).
-3. **Finite Difference Method** (`docs/fdm/`).
-4. **Finite Element Method** (`docs/fem/`). `fem/springs.md` (spring systems → stiffness matrix) is the first real page.
-5. **Finite Volume Method** (`docs/fvm/`).
-6. **Lattice Boltzmann Method** (`docs/lbm/`), possibly.
+1. **Math background**: only the linear algebra and calculus needed later (`math/`).
+2. **Numerical methods for solving problems**: mainly iterative methods (`basics/`).
+3. **Finite Difference Method** (`fdm/`).
+4. **Finite Element Method** (`fem/`). `fem/springs.qmd` (spring systems → stiffness matrix) will be the first real page and the showcase of the setup.
+5. **Finite Volume Method** (`fvm/`).
+6. **Lattice Boltzmann Method** (`lbm/`), possibly.
 
 ### Core design goal: the code shown and the code run are the same
 
@@ -30,7 +30,6 @@ The project is at an **early, exploratory stage**. Most pages are placeholders o
 
 - Switch from MathJax to **KaTeX for all math**, both static and live. KaTeX renders synchronously and quickly, so equations can be redrawn on every drag. Equation numbering and cross-references come from the site generator (Quarto's `{#eq-…}`), not from the math engine. PDF output uses real LaTeX, so this choice only affects HTML.
 - Keep to LaTeX that KaTeX supports. Define shared macros (e.g. `\mat`) once in the KaTeX `macros` config, not per page.
-- The pages in `docs/` still use MathJax 2.7 (see below) until the migration.
 
 ### Live equation templates: values come from R
 
@@ -44,7 +43,7 @@ The project is at an **early, exploratory stage**. Most pages are placeholders o
 - **Formatting is done by an R helper** (e.g. `tex_body(x, digits)`). The same helper fills the templates in the browser (webR) and in the PDF build (native R), so both show identical numbers.
 - For iterative methods, the snippet returns the iteration history, and the template shows iteration `k` (e.g. `x^{({{k}})}`) as the reader scrubs or animates. Entries that changed from the previous step can be highlighted (the helper wraps them in KaTeX `\htmlClass`, which requires KaTeX's `trust` option).
 
-Early prototypes of the webR part: `basics/test.md` (runs R and exports a plot), `basics/rpdf.html` (mounts a custom R package library), and `basics/drag.html` (webR init next to a draggable SVG). None of them connects the dragging to R computation yet.
+The old prototypes (D3 stick figures, webR experiments, the hand-drawn springs page) are in `sandbox/legacy-docs/` for reference; `sandbox/legacy-docs/fem/springs.md` is the reference for the pencil look and drawing helpers.
 
 ## Migration in progress
 
@@ -64,21 +63,31 @@ The move to Quarto + webR + quarto-live is tracked step by step in [plan.md](pla
 - **quarto-live v0.2.0** is committed in `_extensions/r-wasm/live`; it loads webR v0.6.0, which runs R 4.6.0 in the browser. Don't edit the extension's files; update it with `quarto add r-wasm/quarto-live@<tag>`.
 - Node scripts in the scratchpad must import Playwright by absolute path (`<repo>/node_modules/playwright/index.mjs`), because ES modules resolve packages relative to the script's location.
 
-## Commands (legacy MkDocs site, until Phase 1 is done)
+## Commands
 
 ```bash
-pip install mkdocs-material   # pulls in mkdocs and pymdown-extensions
-mkdocs serve                  # live-reload preview at http://127.0.0.1:8000
-mkdocs build                  # render to site/
+quarto preview                 # live-reload preview on localhost
+quarto render                  # build the HTML book into _book/
+Rscript -e 'renv::restore()'   # install the pinned R packages
+npm ci                         # install Playwright (then: npx playwright install chromium)
 ```
+
+To let the author test on their phone, serve on the Tailscale interface only (computer `big-desktop`, 100.109.112.73), never on all interfaces:
+
+```bash
+quarto preview --host 100.109.112.73 --port 4321 --no-browser
+# phone: http://big-desktop.tail49f720.ts.net:4321
+```
+
+Screenshots for checking layout: a Playwright script against a local server, in light and dark mode (Quarto's dark mode: set `localStorage['quarto-color-scheme'] = 'alternate'` before loading) and at phone width (390 px). Send screenshots to the author with SendUserFile; they often follow along on their phone.
 
 ## Architecture / conventions
 
-- **Navigation is explicit**: only pages listed under `nav:` in `mkdocs.yml` appear in the menu. Many files in `docs/` (e.g. `fem/springs.md`, `basics/test2.md`, `basics/lit.md`, the `basics/*.html` files) are experiments/drafts not in `nav` but still built and reachable by URL.
-- **Math (current, to be replaced by KaTeX)**: MathJax 2.7 via `pymdownx.arithmatex` (generic mode). Use `\( … \)` / `\[ … \]` or `$ … $`. Pages define LaTeX macros inline at the top, e.g. `$\newcommand{\mat}[1]{\left[\begin{matrix}#1\end{matrix}\right]}$`.
-- **Interactive figures**: D3 v7 is loaded globally for every page through `extra_javascript` in `mkdocs.yml`, so `<script type="module">` blocks inside Markdown (enabled by `md_in_html`) can use `d3` directly. Standalone `docs/basics/*.html` prototypes load D3 themselves.
-- **Hand-drawn look**: `docs/fem/springs.md` is the most developed page and the reference pattern — inline `<svg><defs>` with pencil-texture SVG filters and arrow markers, plus reusable drawing helpers (`appendGuy`, `spring_path`, draggable nodes, a `spring_guys_plot` class that recomputes spring forces on drag). Styling uses classes (`pen0color`, `pen1`…, `bgfill`, `penfilter`) from `docs/a/style.css`, which pages pull in with `<link rel="stylesheet" href="/a/style.css"/>`. That stylesheet also sets the paper background (`docs/craft.png`). Pen colors should use Material CSS variables (e.g. `--md-default-fg-color`) so they work in both light and dark (`slate`) schemes.
-- **Absolute asset paths** (`/a/style.css`, `/craft.png`, `/vfs/...`) assume the site is served from the domain root.
-- **In-browser R (webR)**: some prototypes (`docs/basics/test.md`, `docs/basics/rpdf.html`, `docs/basics/drag.html`) import webR from `https://webr.r-wasm.org/latest/webr.mjs`. `rpdf.html` mounts `docs/vfs/library.data` + `library.js.metadata` (a prebuilt WORKERFS image of R packages such as Matrix and RTriangle) at `/library` and adds it to `.libPaths()`. These vfs files are generated binaries — don't edit them by hand.
-- **Multi-language code samples** use `pymdownx.tabbed` (`=== "Python"`, `=== "C++"`, `=== "R"`, `=== "Math"`), see `docs/index.md`.
-- Lit web components are being trialled (`docs/basics/lit.md`, loaded from the jsDelivr CDN).
+- **Chapters** are listed in `_quarto.yml` under `book.chapters`, one folder per chapter (`math/`, `basics/`, …, each with `index.qmd`). Only `.qmd` files are rendered; `sandbox/`, `renv/` and `node_modules/` are excluded, and README, plan and CLAUDE.md are never part of the book.
+- **Themes**: Bootswatch `cosmo` (light) and `darkly` (dark), adjusted in `assets/css/theme-{light,dark}.scss` (Roboto fonts, colors). `assets/css/paper.css` gives the kraft-paper look (`assets/img/craft.png`): the content column is a paper card on wide screens, the whole page is paper on narrow ones, and dark mode darkens the paper with `background-blend-mode: multiply`. Dark-mode CSS uses the `body.quarto-dark` selector.
+- **Math**: KaTeX **0.19.1**, pinned through `html-math-method.url` (Quarto would otherwise load `katex@latest`). Shared macros live only in `assets/tex/macros.tex` (plain `\newcommand`, KaTeX-compatible). `filters/macros.lua` embeds that file into each HTML page, and `assets/js/katex-setup.html` (included after the body) wraps `katex.render`/`renderToString` so every render gets the macros and `trust` for `\htmlClass`. The PDF will include `macros.tex` in the LaTeX preamble.
+- Quarto loads KaTeX only on pages that contain math. Pages with live equations but no static math will need to make sure KaTeX is loaded (Phase 2).
+- **Asset paths** in CSS are relative (`../img/craft.png`). `assets/img/` is copied to the output through `project.resources`. Don't use root-absolute paths (`/assets/...`), because the site may be hosted under a subpath (`*.github.io/hello-numerics/`).
+- **R packages in the browser**: webR installs packages from repo.r-wasm.org, which has the same versions of `Matrix` (1.7-6) and `RTriangle` (1.6-0.15) as `renv.lock`. The old custom package image (`vfs/`) was dropped.
+- SVG filters with the default `filterUnits="objectBoundingBox"` make perfectly horizontal or vertical lines disappear (their bounding box has zero size). Apply filters to groups, or use `userSpaceOnUse`.
+- "Edit this page" links point to the `master` branch, so they only work once `rewrite` is merged.
