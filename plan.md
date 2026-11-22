@@ -155,15 +155,11 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 
 ## Phase 5: GitHub Actions
 
-- [ ] **5.1 Snippet tests**: `tests/` uses testthat to extract every R snippet from the `.qmd` files and run it in native R, with checks on the results where useful (e.g. `K %*% u ≈ F`). Runnable locally with `Rscript tests/run.R`.
-- [ ] **5.2 Workflow `.github/workflows/book.yml`** running on push and pull requests:
-  1. Check out the repo; set up R (`r-lib/actions/setup-r` + `setup-renv`), Quarto (`quarto-dev/quarto-actions/setup`, pinned version), TinyTeX and Node + Playwright Chromium, with caching.
-  2. Run the snippet tests (5.1).
-  3. Build the PDF (`scripts/build-pdf.sh`).
-  4. Render the HTML site, with the PDF linked through `downloads`.
-  5. Upload `_book/` as a build artifact (and the PDF separately for easy download).
-- [ ] **5.3 Deployment**: undecided between Netlify (with the custom domain) and GitHub Pages (`*.github.io`). Write the GitHub Pages job (`actions/upload-pages-artifact` + `actions/deploy-pages`) **commented out**, with a note on the Netlify alternative. Netlify can set the cross-origin isolation headers itself through `_headers`, while GitHub Pages would need `coi-serviceworker`. Keep the build output host-neutral (no hard-coded domain beyond `site-url`).
-- [ ] **5.4 Optional smoke test**: Playwright opens the rendered springs page and checks that webR loads and a drag updates the equation.
+- [x] **5.1 Snippet tests** (changed): no separate snippet extraction. Every snippet already runs in native R in the PDF build (the filter stops the build on any R error), and the browser check runs each figure's full code in native R and compares the numbers with webR's. `tests/testthat/` tests the R helpers.
+- [x] **5.2 Workflow `.github/workflows/book.yml`** on push, pull requests and by hand: R 4.6.2 + renv (`r-lib/actions`), Quarto 1.11.9 + TinyTeX, Node (`.node-version`) + Playwright Chromium (cached), then R helper tests → `scripts/build.sh` (site + PDF) → browser check of the live figures → artifacts `book-site` and `book-pdf`.
+  - Not run yet: it runs on the first push of `rewrite` (pushing is the author's call). Action versions checked with `git ls-remote` on 2026-11-22.
+- [x] **5.3 Deployment**: the GitHub Pages job is written and commented out, with the Netlify note (`_headers` for cross-origin isolation vs. `coi-serviceworker`). The site has no hard-coded domain beyond `site-url`.
+- [x] **5.4 Smoke test**: the browser check (`tests/browser/live-figures.mjs`) runs in CI.
 
 ## Phase 6: Later (not part of this migration)
 
@@ -196,3 +192,4 @@ The old MkDocs version is kept on the `legacy` branch (pushed to origin). This w
 | 2026-11-22 | 2.9 | Nested live scopes, sliders, hidden blocks and "Full code" (checked against native R). Highlight fade shortened to 1 s. |
 | 2026-11-22 | Phase 3 (3.1–3.3, 3.5) | `fem/springs.qmd` with five live figures, two sliders and example text; figures `people` and `chain`; figure modules get `opts`; packages only block the scopes that need them; "Full code" button moved under the code block. Waiting for the author's manual check (3.6). |
 | 2026-11-22 | Phase 4 | PDF build: native R evaluation of live scopes in the filter, Playwright figure snapshots, `pdf-states`, slider notes, links to interactive versions; `scripts/build.sh`; site links the PDF. |
+| 2026-11-22 | Phase 5 | GitHub Actions workflow (tests, site + PDF, browser check, artifacts; Pages deployment commented out). Not run on GitHub yet. |

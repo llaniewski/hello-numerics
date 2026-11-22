@@ -1,0 +1,101 @@
+# Builds and checks the book on every push and pull request:
+#   R helper tests -> HTML site + PDF (every live scope runs in native R) ->
+#   browser check of the live figures -> artifacts.
+# Deployment is written out below but commented out until hosting is
+# decided (GitHub Pages or Netlify; see plan.md, step 5.3).
+name: Book
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: book-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      QUARTO_VERSION: "1.11.9"   # same as on the dev machine (CLAUDE.md)
+    steps:
+      - uses: actions/checkout@v7
+
+      # --- R and the pinned packages (renv.lock)
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "4.6.2"
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-renv@v2
+
+      # --- Quarto and TinyTeX (missing LaTeX packages install on first use)
+      - uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: ${{ env.QUARTO_VERSION }}
+          tinytex: true
+
+      # --- Node and Playwright's Chromium (figure snapshots, browser check)
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - run: npx playwright install --with-deps chromium
+
+      # --- Checks and build
+      - name: R helper tests
+        run: Rscript -e 'testthat::test_dir("tests/testthat", stop_on_failure = TRUE)'
+
+      - name: Build the site and the PDF
+        run: scripts/build.sh
+
+      - name: Browser check of the live figures
+        run: node tests/browser/live-figures.mjs fem/springs.html demos/live-spring.html
+
+      # --- Results
+      - uses: actions/upload-artifact@v7
+        with:
+          name: book-site
+          path: _book/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: book-pdf
+          path: _book/*.pdf
+
+  # Deployment to GitHub Pages: commented out until hosting is decided.
+  # To enable: set the repository's Pages source to "GitHub Actions", then
+  # uncomment this job (and, for the custom domain, add a CNAME file to the
+  # site through project.resources).
+  # Alternative: Netlify (custom domain); it can deploy _book/ from this
+  # artifact or build itself, and can set the cross-origin isolation headers
+  # with a _headers file, which GitHub Pages cannot (that would need
+  # coi-serviceworker). webR works without them, only somewhat slower.
+  #
+  # deploy:
+  #   needs: build
+  #   if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+  #   runs-on: ubuntu-24.04
+  #   permissions:
+  #     pages: write
+  #     id-token: write
+  #   environment:
+  #     name: github-pages
+  #     url: ${{ steps.deployment.outputs.page_url }}
+  #   steps:
+  #     - uses: actions/download-artifact@v8
+  #       with:
+  #         name: book-site
+  #         path: _book
+  #     - uses: actions/configure-pages@v6
+  #     - uses: actions/upload-pages-artifact@v5
+  #       with:
+  #         path: _book
+  #     - id: deployment
+  #       uses: actions/deploy-pages@v5

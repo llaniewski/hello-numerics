@@ -48,8 +48,8 @@ In-browser R (webR) is loaded from its CDN by the pages themselves, so it needs 
 ### Building
 
 ```bash
-quarto preview   # live-reload preview in the browser
-quarto render    # build the book into _book/
+quarto preview     # live-reload preview in the browser (HTML only)
+scripts/build.sh   # build the site and the PDF into _book/ (= quarto render, after checking Node)
 ```
 
 ### Testing
@@ -60,3 +60,9 @@ node tests/browser/live-figures.mjs                    # after quarto render: dr
 ```
 
 R dependencies are listed in `DESCRIPTION`. After adding one there, install it with `renv::install()` and record it with `renv::snapshot()`.
+
+The PDF build runs every live R snippet in native R and draws the figures in headless Chromium, so it needs the R packages and Playwright installed (see above).
+
+### Continuous integration
+
+`.github/workflows/book.yml` runs the tests, builds the site and the PDF, and checks the live figures in a headless browser on every push and pull request. The built site and PDF are available as workflow artifacts. Deployment is prepared but commented out until hosting is decided.
