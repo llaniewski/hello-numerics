@@ -20,6 +20,10 @@ jobs:
     timeout-minutes: 45
     env:
       QUARTO_VERSION: "1.11.9"   # same as on the dev machine (CLAUDE.md)
+      # Quarto looks up the latest TinyTeX release through the GitHub API.
+      # Anonymous calls share a small rate limit per runner IP and fail with
+      # 403 at random; with GH_TOKEN set, Quarto authenticates them.
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v7
 
