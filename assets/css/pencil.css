@@ -87,8 +87,48 @@ body.quarto-dark {
   border-radius: 3px;
 }
 
-/* Live figures (filters/live.lua) */
-.hn-live { margin: 1rem 0; }
+/* Live scopes (filters/live.lua, lib/js/live/page.js) */
 .hn-live-eq { overflow-x: auto; overflow-y: hidden; }
-.hn-live-status { font-size: 0.85em; opacity: 0.75; min-height: 1.2em; }
+.hn-live-hidden { display: none; }
+.hn-live-status { font-size: 0.85em; opacity: 0.75; margin-bottom: 0.75rem; }
+.hn-live-status:empty { display: none; }
 .hn-live-status.hn-live-error { color: var(--bs-danger, #b00020); opacity: 1; }
+
+/* "Full code" button, next to Quarto's copy button, and its panel */
+.code-copy-outer-scaffold { position: relative; }
+.hn-fullcode-button {
+  position: absolute; top: 0; right: 2.1rem; z-index: 3;
+  margin-top: 5px; padding: 0 0.45rem;
+  font-size: 0.75rem; line-height: 1.5rem;
+  color: var(--bs-body-color); background: transparent;
+  border: 1px solid currentColor; border-radius: 0.75rem; opacity: 0.55;
+}
+.hn-fullcode-button:hover, .hn-fullcode-button.hn-active { opacity: 1; }
+.hn-fullcode {
+  margin: -0.5rem 0 1rem;
+  border-left: 3px solid var(--hn-pen2);
+  padding-left: 0.6rem;
+}
+.hn-fullcode-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  font-size: 0.8rem; opacity: 0.85; margin: 0.4rem 0;
+}
+.hn-fullcode-copy {
+  flex: none; font-size: 0.75rem; padding: 0.1rem 0.6rem;
+  color: var(--bs-body-color); background: transparent;
+  border: 1px solid currentColor; border-radius: 0.75rem;
+}
+.hn-fullcode div.sourceCode { margin-top: 0; }
+
+/* Sliders */
+.hn-live-slider { margin: 1rem 0; }
+.hn-slider { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem 0.9rem; width: 100%; }
+.hn-slider-label { flex: 1 0 100%; font-weight: 500; }
+.hn-slider input[type="range"] {
+  flex: 1 1 12rem; min-width: 8rem; height: 2rem;   /* tall enough for a finger */
+  accent-color: var(--hn-pen2);
+}
+.hn-slider-value { flex: none; font-size: 1em; background: transparent; }
+code.hn-slider-value.hn-q-pen1 { color: var(--hn-pen1); }
+code.hn-slider-value.hn-q-pen2 { color: var(--hn-pen2); }
+code.hn-slider-value.hn-q-pen3 { color: var(--hn-pen3); }

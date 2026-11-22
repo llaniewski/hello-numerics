@@ -91,17 +91,33 @@ Screenshots for checking layout: a Playwright script against a local server, in 
   - `figures/`: one module per figure, exporting `draw(svg, state)` and `interact(svg, state, onChange)`. Figures never compute physics; values come from R.
   - `live/`: the webR bridge. `webr.js` (one webR per page, loads `lib/R/tex.R`, installs packages), `livecode.js` (tokenizes the snippet with R's `getParseData` and rewrites only the input literals: shown text = executed text), `bridge.js` (runs the snippet; one evaluation at a time, intermediate states skipped; reads back outputs and slots in one R call), `liveeq.js` (`{{expr|digits}}` templates), `changes.js` (fading highlight), `mount.js` (wires a figure, its snippet and equations; `?debug` shows timings).
 - `lib/R/tex.R`: LaTeX formatting of R values, shared by webR and native R. Tests: `tests/testthat/` (`Rscript -e 'testthat::test_dir("tests/testthat")'`).
-- **Live figures** are written as a div, turned into HTML by `filters/live.lua`:
-  ````markdown
-  ::: {.live-figure figure="spring1"}
+- **Live scopes** (`filters/live.lua` → `lib/js/live/page.js`; full rules in the header comments of both):
+  `````markdown
+  :::: {.live #springs}                  outer scope (e.g. a whole section)
+  ```r
+  k <- 2
+  ```
+  ```{.r .hidden}                        runs and is in "Full code", not shown
+  library(Matrix)
+  ```
+  ::: {.live figure="spring1"}           inner scope: sees k
   ```r
   x1 <- 3
-  F  <- -2 * (x1 - 2)
+  F  <- -k * (x1 - 2)
   ```
   $$ F = {{F|3}} $$
   :::
-  ````
-  The figure module (`lib/js/figures/<name>.js`) exports `inputs` (R variables the reader changes; numeric literals in the snippet), `outputs` (R expressions it needs back as numbers), `colors` (`{x1: "pen1"}`), `draw` and `interact`; its state uses the R names. Div attributes `inputs`, `outputs`, `colors="x1:pen1"` and `packages="Matrix"` override or add to these. Write the snippet as ```` ```r ```` (not ```` ```{r} ````), so knitr never runs it. The equations' placeholder math (slots shown as `?`) also makes Quarto load KaTeX.
+  ::: {.live-slider input="k" min="0.5" max="5" step="0.1" color="pen2"}
+  Spring constant
+  :::
+  ::::
+  `````
+  - Each scope's R environment has the enclosing scope's environment as parent. All ```` ```r ```` blocks of a scope run in page order (`.static` opts a block out; write ```` ```r ````, not ```` ```{r} ````, so knitr never runs it).
+  - An input (a figure's `inputs`, a slider's `input`) is a variable assigned a numeric literal; it belongs to the nearest enclosing scope that assigns it. Changing it reruns that scope and all scopes inside it, parents first, with fresh environments. One R call per run; changes made while R is busy are merged.
+  - The figure module (`lib/js/figures/<name>.js`) exports `inputs`, `outputs` (R expressions it needs back as numbers), `colors` (`{x1: "pen1"}`), `draw` and `interact`; its state uses the R names. Div attributes `inputs`, `outputs`, `colors="x1:pen1"` override them. Colors are inherited by inner scopes.
+  - Packages are found from `library()`/`require()`/`pkg::` in the code and installed in webR automatically.
+  - Every shown block has a **Full code** button: the code of all enclosing scopes (hidden blocks included) and its own, with current values. `tests/browser/live-figures.mjs` runs it in native R and compares with the browser.
+  - Scopes are emitted as start/end marker divs, not wrapping divs, because Pandoc leaves headings inside divs out of the table of contents.
 - In **inline** code, Quarto turns a leading `{{…}}` into `{…}` (its escape for inline executable code); write `` `{{{expr}}}` `` to show `{{expr}}`. Code blocks and math are not affected.
   - Pages import these with relative paths (`../lib/js/...`).
 - Use `engine: markdown` on pages without native R chunks (otherwise Quarto picks Jupyter). A page's own `filters` replace the book-wide list, so avoid page-level `filters`.

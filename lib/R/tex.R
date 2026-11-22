@@ -68,9 +68,3 @@ tex_slot <- function(slot) {
   if (length(m) == 0) return(list(expr = trimws(slot), digits = NULL))
   list(expr = trimws(m[2]), digits = as.integer(m[3]))
 }
-
-# Used by the browser bridge: one slot as c(nrow, ncol, entries row by row).
-.hn_slot <- function(expr, digits, env) {
-  e <- tex_entries(eval(parse(text = expr), env), digits)
-  c(nrow(e), ncol(e), as.vector(t(e)))
-}

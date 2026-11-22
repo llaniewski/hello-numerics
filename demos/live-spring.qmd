@@ -1,17 +1,28 @@
 ---
-title: "Demo: a live figure"
+title: "Demo: live scopes"
 engine: markdown
 ---
 
-Drag the person. The value in the code changes, **exactly that code** runs in R in your browser, and the force arrow and the equation are filled in with the values from R. Changed values light up and slowly fade. Add `?debug` to the page address to see timings.
+Drag the person. The value in the code changes, **exactly that code** runs in R in your browser, and the force arrow and the equation are filled in with the values from R. Changed values light up and fade. Add `?debug` to the page address to see timings.
+
+:::: {.live #springs}
+All examples in this section use the same spring:
+
+```r
+k  <- 2     # spring constant [N/m]
+L0 <- 2     # rest length [m]
+```
+
+```{.r .hidden}
+# Stiffness matrix of one spring (hidden on the page, but part of the full code)
+spring_matrix <- function(k) k * matrix(c(1, -1, -1, 1), 2, 2)
+```
 
 The force on the person is $F = -k\,(x_1 - L_0)$.
 
-::: {.live-figure figure="spring1"}
+::: {.live figure="spring1"}
 ```r
 x1 <- 3
-k  <- 2
-L0 <- 2
 F  <- -k * (x1 - L0)
 ```
 
@@ -24,12 +35,10 @@ $$
 
 A slot can hold a whole matrix or vector: `\mat{ {{K}} }` expands to the rows of `K`. Here the same spring is written with its stiffness matrix: the forces at the two ends are $f = K u$.
 
-::: {.live-figure figure="spring1"}
+::: {.live figure="spring1"}
 ```r
 x1 <- 2.5
-k  <- 2
-L0 <- 2
-K  <- k * matrix(c(1, -1, -1, 1), 2, 2)
+K  <- spring_matrix(k)
 u  <- c(0, x1 - L0)
 f  <- K %*% u
 F  <- -f[2]
@@ -40,14 +49,31 @@ $$
 $$
 :::
 
+## Changing the spring everywhere
+
+Both examples above take `k` from the code at the top of the section. Now we can check what happens when we change the spring: every example in the section updates.
+
+::: {.live-slider input="k" min="0.5" max="5" step="0.1" color="pen2"}
+Spring constant
+:::
+::::
+
 ## How this page is written
 
 ````markdown
-::: {.live-figure figure="spring1"}
+:::: {.live #springs}
+```r
+k  <- 2     # spring constant [N/m]
+L0 <- 2     # rest length [m]
+```
+
+```{.r .hidden}
+spring_matrix <- function(k) k * matrix(c(1, -1, -1, 1), 2, 2)
+```
+
+::: {.live figure="spring1"}
 ```r
 x1 <- 3
-k  <- 2
-L0 <- 2
 F  <- -k * (x1 - L0)
 ```
 
@@ -55,6 +81,17 @@ $$
 F = -k\,(x_1 - L_0) = -{{k}}\,({{x1}} - {{L0}}) = {{F}}\ \mathrm{N}
 $$
 :::
+
+…
+
+::: {.live-slider input="k" min="0.5" max="5" step="0.1" color="pen2"}
+Spring constant
+:::
+::::
 ````
 
-The figure module `lib/js/figures/spring1.js` declares that the reader changes `x1`, and that it needs `L0` and `F` back from R. Each `{{{expr}}}` in the equation is evaluated in R after the snippet has run, and formatted by `tex_body()` from `lib/R/tex.R` (`{{{F|2}}}` would use 2 significant digits).
+- `:::: {.live}` is a **scope**. Its R code runs in its own environment, and scopes inside it see its variables (R's usual lookup through parent environments). An inner scope that assigns `k` itself gets its own `k`.
+- The figure module `lib/js/figures/spring1.js` declares that the reader changes `x1`, and that it needs `L0` and `F` back from R. Dragging reruns only the figure's own scope.
+- The slider changes `k`, which is assigned in the outer scope, so it reruns the outer scope and every scope inside it.
+- Each `{{{expr}}}` in an equation is evaluated in R in its scope, and formatted by `tex_body()` from `lib/R/tex.R` (`{{{F|2}}}` would use 2 significant digits).
+- **Full code** on a snippet shows everything needed to run it in plain R: the code of the enclosing scopes (with hidden parts) and its own, with the current values.
