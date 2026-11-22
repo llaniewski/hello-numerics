@@ -1,0 +1,120 @@
+# Migration plan: Quarto + webR + quarto-live
+
+This file lists the steps for moving the book to the new setup and tracks progress. The goals and design decisions behind it are in [CLAUDE.md](CLAUDE.md).
+
+Status: `[ ]` to do · `[~]` in progress · `[x]` done · `[-]` dropped (with a reason).
+Record finished steps in the **Log** at the bottom, with date and commit.
+
+---
+
+## Phase 0: Installation and tooling
+
+Already on the dev machine: R 4.3.3, Node 18.19.1, Python 3. Quarto is **not** installed yet.
+Everything is installed **in user space, without sudo**. The only possible exception is a missing system library for Playwright's Chromium (see 0.4).
+
+- [ ] **0.1 Install the Quarto CLI** from the release tarball (`quarto-<ver>-linux-amd64.tar.gz`, https://quarto.org/docs/download/). Unpack it to `~/opt/quarto-<ver>` and symlink `bin/quarto` into `~/.local/bin`. Check with `quarto check`. Record the version used, and pin the same version in CI.
+- [ ] **0.2 Install a LaTeX engine for the PDF build**: `quarto install tinytex`, which installs into `~/.TinyTeX`. Missing LaTeX packages are installed automatically on the first PDF render.
+- [ ] **0.3 Pin R packages with `renv`** (decided). Run `renv::init()`, then install `knitr`, `rmarkdown`, `jsonlite`, `glue` and `testthat`, plus `Matrix` and `RTriangle` for later chapters. Use the Posit Package Manager repository, which provides precompiled Ubuntu binaries, so packages install quickly without needing system development libraries. Commit `renv.lock` so CI installs the same versions.
+- [ ] **0.4 Set up Node tooling for PDF figure snapshots**: a `package.json` with `playwright` as a dev dependency, then `npx playwright install chromium`, which downloads into `~/.cache/ms-playwright`. If Chromium reports missing system libraries, `npx playwright install-deps` needs sudo; ask the author to run it. Node 18 works, but use Node 20 LTS in CI.
+- [ ] **0.5 Add the quarto-live extension**: `quarto add r-wasm/quarto-live`. This commits it into `_extensions/`. Record the extension version and the webR version it loads.
+- [ ] **0.6 Write a short "Getting started" section in `README.md`** with the commands above and how to preview (`quarto preview`) and build.
+- [ ] **0.7 Update `CLAUDE.md`**: replace the MkDocs commands and conventions with the Quarto ones (repeat whenever the conventions change).
+
+## Phase 1: Move the project to Quarto
+
+Planned layout (adjust in this step if needed):
+
+```
+_quarto.yml            book config (HTML + PDF), KaTeX, theme
+index.qmd              preface
+math/ basics/ fdm/ fem/ fvm/ lbm/   chapters (.qmd)
+assets/                css, images, svg defs, favicon
+lib/js/                figure kit + webR bridge (ES modules)
+lib/R/                 R helpers (tex_body, …)
+_extensions/           quarto-live and our own shortcodes/filters
+scripts/               PDF snapshot and build scripts
+tests/                 snippet tests (testthat)
+sandbox/               old prototypes, not rendered, git-ignored
+```
+
+The old MkDocs version is kept on the `legacy` branch (pushed to origin). This work happens on the `rewrite` branch.
+
+- [ ] **1.1 Create `_quarto.yml`** with `project: type: book`: title, author, `site-url` (https://www.hello-numerics.com/), repo link, an "edit this page" link, chapters in the order from CLAUDE.md, and the output directory `_book/`.
+- [ ] **1.2 HTML format**: `html-math-method: katex`, a light/dark theme pair, code copy buttons, the favicon, and the paper background (`craft.png`) through a custom SCSS/CSS file.
+- [ ] **1.3 KaTeX macros**: define `\mat` and other shared macros once, in a KaTeX config include for HTML and a LaTeX preamble include for PDF, so both formats understand the same macros. Remove the per-page `\newcommand`s.
+- [ ] **1.4 Convert pages from `.md` to `.qmd`**: `index`, `math`, `basics`, `fdm`, `fem`, `fvm`, `lbm` (mostly placeholders). Convert the tabbed code samples in `index.md` to Quarto `::: {.panel-tabset}`.
+- [ ] **1.5 Move the prototypes** (`basics/*.html`, `test.md`, `test2.md`, `lit.md`, `rpdf.html`, `test.R`) to `sandbox/` for local reference. Add `sandbox/` to `.gitignore` and exclude it from rendering. In git they are deleted on `rewrite`; the originals stay on `legacy`.
+- [ ] **1.6 Webr package image**: decide whether the custom `vfs/` library image is still needed. quarto-live can install packages from repo.r-wasm.org. If it is needed, move it to `assets/vfs/` and document how it is rebuilt.
+- [ ] **1.7 Check that `quarto render` (HTML) works locally** and the site looks right in light and dark mode.
+- [ ] **1.8 Remove `mkdocs.yml` and the old `docs/` tree** once nothing still needs them. Keep the `CNAME` for the custom domain, if one is used.
+
+## Phase 2: Shared libraries and assets
+
+- [ ] **2.1 Color palette**: `assets/css/pencil.css` defines the pen colors as CSS variables (`--hn-pen0` …) with light and dark variants. Dark mode is tied to Quarto's dark theme (the `.quarto-dark` body class), not Material variables. The same colors are used to highlight quantities in code and equations.
+- [ ] **2.2 SVG defs**: move the pencil-texture filters and arrow markers from `springs.md` into `assets/svg/defs.svg`. A JS helper `ensureDefs()` puts them on the page once, and figures reference them by id.
+- [ ] **2.3 Figure kit** `lib/js/kit/`: drawing primitives as ES modules (stick figure "guy", spring, wall, node, force arrow, dimension line) and drag helpers (dragging along x/y only, snapping). Each figure exports `draw(svg, state)` and `interact(svg, state, onChange)`.
+- [ ] **2.4 webR bridge** `lib/js/bridge.js`:
+  - Share the single webR instance that quarto-live creates; if quarto-live doesn't expose it, decide between that and running webR directly.
+  - Run a snippet with the given inputs, return the named list as JavaScript data via `toJs()`.
+  - Throttle while dragging: one evaluation at a time, and only the latest pending state runs next.
+  - A debug overlay, turned on with `?debug` in the URL, showing webR load time, the R evaluation time per update (last/average/max), and how many intermediate drag states were skipped. This gives concrete numbers when judging responsiveness by hand.
+- [ ] **2.5 Live code**: rewrite the input literals in the shown snippet (`x1 <- 1.35`), finding them with R's `getParseData()`, and run exactly the displayed text. Color the inputs and highlight values that just changed.
+- [ ] **2.6 Live equations** `lib/js/livetex.js` + `lib/R/tex.R`: fill `{{expr}}` slots (with an optional digits setting such as `{{x|3}}`) using `tex_body()` evaluated in R, and render with KaTeX (with `trust` on, for `\htmlClass`). Use the same `tex_body()` in native R for the PDF.
+- [ ] **2.7 Authoring interface**: one Quarto shortcode or filter (e.g. `{{< live-figure springs >}}`) that ties together the figure module, the snippet chunk and the equation templates, and outputs the right content for HTML or PDF.
+- [ ] **2.8 First evaluate quarto-live's own reactivity** (OJS `input`/`define` options on webR cells) on a small example. **Author decides after this step.** Prepare:
+  - a demo page in `sandbox/` with a draggable point feeding a quarto-live webR cell, showing what it can and can't do (live literals in code? redrawing equations? latency?);
+  - a short written comparison: quarto-live's reactivity vs. our own bridge on plain webR.
+
+  Record the decision here; steps 2.4–2.5 build on it.
+
+## Phase 3: Springs showcase (`fem/springs.qmd`)
+
+- [ ] **3.1 Text**: Hooke's law, force balance at both ends, the 2×2 stiffness matrix, then assembly for a chain of springs. Math rendered with KaTeX.
+- [ ] **3.2 Single-spring figure with live values**: dragging the end node updates the R snippet (live literals), the equation `K u = F` (slots `{{K}}`, `{{u}}`, `{{F}}`) and the force arrows. Colors match across figure, code and equation.
+- [ ] **3.3 Chain of springs figure**: R assembles `K` and solves it; the figure shows displacements and reaction forces. Plain "snippet + figure" (no live literals).
+- [ ] **3.4 PDF version**: two or three fixed states shown side by side, plus a link to the live page.
+- [ ] **3.5 Automated checks (Claude)**: Playwright script against `quarto preview` that loads the page, waits for webR, simulates drags, and checks that the code, equation and figure all show the same values as R. It records timings: webR load, evaluation time per drag, skipped states. Also screenshots in light/dark mode and at phone width.
+- [ ] **3.6 Manual check (author)**: Claude runs `quarto preview` in the background (live reload at `http://localhost:<port>`); the author drags with a real mouse (and a touchscreen, if available), with `?debug` on for timings. The author's feedback goes to the Log below and turns into fixes. Repeat until dragging feels right.
+
+## Phase 4: PDF build
+
+- [ ] **4.1 PDF format** in `_quarto.yml`: book class, the shared macro preamble, code highlighting, and `downloads: [pdf]` so the website links to the PDF.
+- [ ] **4.2 Figure states**: R chunks write each figure's chosen state(s) to `_figstate/<figure>.json` during the render.
+- [ ] **4.3 `scripts/snapshot-figures.mjs`**: Playwright opens a minimal page, calls the figure's `draw(svg, state)` for each state, and saves the result as PDF/SVG to `_figs/`. Use a headless browser so the SVG filters render correctly.
+- [ ] **4.4 `scripts/build-pdf.sh`**: run the R state export, then the snapshots, then `quarto render --to pdf`. Make it idempotent and runnable locally.
+- [ ] **4.5 Choose the content per format** with `content-visible when-format=…`, wrapped in the shortcode from 2.7.
+- [ ] **4.6 Check** that the PDF renders, figures look right (including the pencil effect), and code, equations and figures show the same numbers.
+
+## Phase 5: GitHub Actions
+
+- [ ] **5.1 Snippet tests**: `tests/` uses testthat to extract every R snippet from the `.qmd` files and run it in native R, with checks on the results where useful (e.g. `K %*% u ≈ F`). Runnable locally with `Rscript tests/run.R`.
+- [ ] **5.2 Workflow `.github/workflows/book.yml`** running on push and pull requests:
+  1. Check out the repo; set up R (`r-lib/actions/setup-r` + `setup-renv`), Quarto (`quarto-dev/quarto-actions/setup`, pinned version), TinyTeX and Node + Playwright Chromium, with caching.
+  2. Run the snippet tests (5.1).
+  3. Build the PDF (`scripts/build-pdf.sh`).
+  4. Render the HTML site, with the PDF linked through `downloads`.
+  5. Upload `_book/` as a build artifact (and the PDF separately for easy download).
+- [ ] **5.3 Deployment**: undecided between Netlify (with the custom domain) and GitHub Pages (`*.github.io`). Write the GitHub Pages job (`actions/upload-pages-artifact` + `actions/deploy-pages`) **commented out**, with a note on the Netlify alternative. Netlify can set the cross-origin isolation headers itself through `_headers`, while GitHub Pages would need `coi-serviceworker`. Keep the build output host-neutral (no hard-coded domain beyond `site-url`).
+- [ ] **5.4 Optional smoke test**: Playwright opens the rendered springs page and checks that webR loads and a drag updates the equation.
+
+## Phase 6: Later (not part of this migration)
+
+- [ ] Write the content chapters (math → iterative methods → FDM → FEM → FVM → LBM).
+- [ ] Iterative-method figures with iteration history and highlighting of changed entries.
+- [ ] Enable deployment, and decide on `coi-serviceworker` for cross-origin isolation.
+
+---
+
+## Decisions
+
+- [x] **R package pinning**: use `renv`.
+- [x] **Old prototypes**: move to `sandbox/` for local reference, git-ignored and never committed; the originals stay on the `legacy` branch.
+- [x] **Git**: commit to the `rewrite` branch. Commits are authored by Claude, and the message states the work was done under L Laniewski-Wollk's direction.
+- [ ] **quarto-live reactivity vs. own bridge**: the author decides after the demo in 2.8.
+- [ ] **Hosting**: Netlify with the custom domain vs. GitHub Pages on `github.io`. The author decides later; this also settles `CNAME` and the cross-origin isolation headers.
+
+## Log
+
+| Date | Step | Notes / commit |
+|---|---|---|
+| 2026-11-22 | — | Plan written; decisions on renv, sandbox, git and testing recorded |
