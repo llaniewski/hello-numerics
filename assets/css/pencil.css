@@ -72,7 +72,7 @@ code span.hn-input.hn-q-pen3 { color: var(--hn-pen3); }
    While dragging, values change continuously and stay highlighted. */
 :root {
   --hn-changed-bg: rgba(255, 205, 40, 0.85);
-  --hn-changed-fade: 2.5s;
+  --hn-changed-fade: 1s;
 }
 body.quarto-dark {
   --hn-changed-bg: rgba(200, 150, 20, 0.6);
